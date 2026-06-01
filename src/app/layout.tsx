@@ -3,8 +3,8 @@ import "./globals.css"
 import { Providers } from "./providers"
 
 export const metadata: Metadata = {
-  title: "SIDS Iglesia - Sistema de Gestión Ministerial",
-  description: "Plataforma de gestión para ministerios, colaboradores y eventos de la iglesia",
+  title: "SIDS Iglesia | Una familia con propósito",
+  description: "Te esperamos con las puertas abiertas. Jueves 20hs, Sábado 19hs, Domingo 18hs.",
 }
 
 export default function RootLayout({
@@ -15,6 +15,10 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

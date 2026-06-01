@@ -54,7 +54,7 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: "Public Sans", system-ui, -apple-system, sans-serif;
 }
 
 .dark body {

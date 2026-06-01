@@ -1,0 +1,139 @@
+"use client"
+
+import { useState } from "react"
+import { useMinisterios } from "@/hooks/useMinisterios"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Church, Music, Volume2, Monitor, BookOpen, Trash2 } from "lucide-react"
+import { crearDocumento, eliminarDocumento } from "@/lib/firestore"
+import { Ministerio } from "@/types"
+import { MINISTERIOS_PREDETERMINADOS } from "@/lib/constants"
+import { toast } from "sonner"
+import Link from "next/link"
+
+const iconos: Record<string, any> = { Church, Music, Volume2, Monitor, BookOpen }
+
+export default function MinisteriosPage() {
+  const { ministerios, loading } = useMinisterios()
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ nombre: "", descripcion: "", roles: "" })
+
+  const handleCreate = async () => {
+    if (!form.nombre) return
+    try {
+      await crearDocumento<Ministerio>("ministerios", {
+        nombre: form.nombre,
+        descripcion: form.descripcion,
+        roles: form.roles.split(",").map((r) => r.trim()).filter(Boolean),
+        liderId: "",
+        color: "#73A243",
+        icono: "Church",
+        activo: true,
+      })
+      toast.success("Ministerio creado exitosamente")
+      setOpen(false)
+      setForm({ nombre: "", descripcion: "", roles: "" })
+    } catch {
+      toast.error("Error al crear ministerio")
+    }
+  }
+
+  const handleDelete = async (id: string, nombre: string) => {
+    if (!confirm(`¿Eliminar el ministerio "${nombre}"?`)) return
+    try {
+      await eliminarDocumento("ministerios", id)
+      toast.success("Ministerio eliminado")
+    } catch {
+      toast.error("Error al eliminar ministerio")
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Ministerios</h1>
+          <p className="text-muted-foreground">Gestiona los ministerios de la iglesia</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4" />
+              Nuevo Ministerio
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear Ministerio</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nombre</Label>
+                <Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Nombre del ministerio" />
+              </div>
+              <div className="space-y-2">
+                <Label>Descripción</Label>
+                <Input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder="Descripción breve" />
+              </div>
+              <div className="space-y-2">
+                <Label>Roles (separados por coma)</Label>
+                <Input value={form.roles} onChange={(e) => setForm({ ...form, roles: e.target.value })} placeholder="Voz Principal, Guitarra, Bajo" />
+              </div>
+              <Button onClick={handleCreate} className="w-full">Crear</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {ministerios.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center text-muted-foreground">
+            <Church className="h-12 w-12 mx-auto mb-4 opacity-30" />
+            <p className="text-lg font-medium mb-1">No hay ministerios</p>
+            <p className="text-sm">Crea el primer ministerio para empezar</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {ministerios.map((m) => {
+            const Icon = iconos[m.icono] || Church
+            return (
+              <Card key={m.id} className="hover:shadow-md transition-shadow group">
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <Link href={`/ministerios/${m.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: m.color + "20" }}>
+                      <Icon className="h-5 w-5" style={{ color: m.color }} />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="text-base truncate">{m.nombre}</CardTitle>
+                      <p className="text-xs text-muted-foreground truncate">{m.descripcion}</p>
+                    </div>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                    onClick={() => handleDelete(m.id, m.nombre)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1">
+                    {m.roles?.map((rol) => (
+                      <Badge key={rol} variant="secondary" className="text-xs">{rol}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}

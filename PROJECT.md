@@ -17,18 +17,32 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 | shadcn/ui | - | Componentes de UI (Radix primitives) |
 | date-fns | 4.4.0 | Manejo de fechas |
 | lucide-react | - | Iconos |
+| framer-motion | 12.40.0 | Animaciones scroll |
+| Font Awesome | 4.7 (CDN) | Iconos sociales (fa-facebook, fa-youtube-play, fa-instagram) |
 | sonner | - | Toast notifications |
+| Public Sans | Google Fonts | Tipografía principal |
 
 ---
 
 ## Paleta de Colores
 
+### Modo Oscuro (default)
 ```
-#144137 ██  Fondo dark mode / verde muy oscuro
-#2A6A47 ██  Secondary / bordes dark mode
-#73A243 ██  Primary / acentos principales
-#DAE953 ██  Accent / highlights
-#EBF5BA ██  Texto foreground dark / fondos light
+#0a0a0a ██  Fondo principal
+#73A243 ██  Primary / acentos verdes
+#2A6A47 ██  Secondary / tonalidad más oscura
+#DAE953 ██  Accent / highlights brillantes
+#EBF5BA ██  Verde muy claro / uso sutil
+#C9A84C ██  Dorado (anterior, ya no se usa)
+```
+
+### Modo Claro (day mode)
+```
+#FFFFFF ██  Fondo principal
+#0a0a0a ██  Texto foreground
+#666666 ██  Texto muted
+#2A6A47 ██  Primary / acentos (más oscuro en light)
+#73A243 ██  Accent secundario
 ```
 
 ---
@@ -38,55 +52,52 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 ```
 sids-iglesia/
 ├── public/
+│   ├── Dra.jpg               # Dra. Magdalena Montenegro
+│   ├── Obispo.jpg             # Obispo Edgardo Montenegro
+│   ├── Pastor.jpg             # Pastor (en desuso)
+│   ├── Musico.jpg             # Músico (en desuso)
+│   └── Musicosection.jpg      # Sección músicos (collage)
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/             # Grupo de rutas de autenticación
+│   │   │   ├── layout.tsx      # Meta robots noindex
 │   │   │   ├── login/page.tsx
 │   │   │   └── register/page.tsx
 │   │   ├── (dashboard)/        # Grupo de rutas protegidas
-│   │   │   ├── layout.tsx
+│   │   │   ├── layout.tsx      # Meta robots noindex
 │   │   │   ├── dashboard/page.tsx
 │   │   │   ├── ministerios/
-│   │   │   │   ├── page.tsx
-│   │   │   │   └── [id]/page.tsx
 │   │   │   ├── eventos/
-│   │   │   │   ├── page.tsx
-│   │   │   │   └── [id]/page.tsx
 │   │   │   ├── cronogramas/
-│   │   │   │   ├── page.tsx
-│   │   │   │   └── [id]/page.tsx
-│   │   │   ├── tareas/page.tsx
-│   │   │   ├── asistencia/page.tsx
-│   │   │   ├── usuarios/page.tsx
-│   │   │   ├── reportes/page.tsx
-│   │   │   └── perfil/page.tsx
-│   │   ├── publico/page.tsx     # Página pública (sin login)
-│   │   ├── globals.css          # Estilos globales + tema
-│   │   ├── layout.tsx           # Layout raíz
+│   │   │   ├── tareas/
+│   │   │   ├── asistencia/
+│   │   │   ├── usuarios/
+│   │   │   ├── reportes/
+│   │   │   └── perfil/
+│   │   ├── publico/page.tsx    # Redirecciona a /
+│   │   ├── globals.css          # Tema Tokens + dark mode + radial gradients
+│   │   ├── layout.tsx           # Root layout (Public Sans, FA, inline theme script)
 │   │   ├── providers.tsx        # Providers globales
-│   │   └── page.tsx             # Redirección inicial
+│   │   └── page.tsx             # Landing page completa
 │   ├── components/
-│   │   ├── ui/                  # Componentes shadcn/ui
+│   │   ├── ui/                  # shadcn/ui (Button, Card, Input, etc.)
 │   │   ├── layout/              # Sidebar, DashboardLayout
-│   │   └── auth/                # ProtectedRoute, RoleGuard
+│   │   └── landing/             # Componentes antiguos (en desuso)
 │   ├── contexts/
-│   │   ├── AuthContext.tsx       # Contexto de autenticación
-│   │   └── ThemeContext.tsx      # Contexto de modo oscuro
-│   ├── hooks/                   # Hooks personalizados
+│   │   ├── AuthContext.tsx       # Firebase Auth context
+│   │   └── ThemeContext.tsx      # Dark/Light mode toggle
+│   ├── hooks/
 │   ├── lib/
-│   │   ├── firebase.ts          # Configuración Firebase
-│   │   ├── firestore.ts         # Helper functions Firestore
-│   │   ├── utils.ts             # Utilidades (cn)
+│   │   ├── firebase.ts          # Firebase lazy init (SSR-safe)
+│   │   ├── firestore.ts         # Firestore helpers
+│   │   ├── utils.ts             # cn() utility
 │   │   └── constants.ts         # Constantes del sistema
 │   └── types/index.ts           # Tipos TypeScript
 ├── .env.local                   # Variables de entorno (no comitear)
-├── .env.local.example           # Template de variables
-├── AGENTS.md                    # Instrucciones para la IA
-├── PROJECT.md                   # Esta documentación
-├── next.config.ts
-├── package.json
-├── postcss.config.mjs
-└── tsconfig.json
+├── .env.local.example
+├── AGENTS.md
+├── PROJECT.md
+└── next.config.ts
 ```
 
 ---
@@ -95,10 +106,10 @@ sids-iglesia/
 
 | Ruta | Acceso | Descripción |
 |---|---|---|
-| `/` | Público | Redirecciona según auth |
-| `/login` | Público | Inicio de sesión |
+| `/` | Público | Landing page (Quiénes Somos, Obispo, Músicos+Horarios, Mapa) |
+| `/login` | Público | Inicio de sesión (sin link visible en landing) |
 | `/register` | Público | Registro de usuario |
-| `/publico` | Público | Página pública con horarios y eventos |
+| `/publico` | Público | Redirecciona a `/` |
 | `/dashboard` | Auth | Dashboard según rol |
 | `/ministerios` | Pastor/Líder | Gestión de ministerios |
 | `/ministerios/[id]` | Pastor/Líder | Detalle del ministerio |
@@ -281,19 +292,17 @@ npm run dev
 
 ## Características Principales
 
+- [x] Landing page minimalista con modo oscuro/claro
+- [x] Fondo con radial-gradients verdes y parallax
+- [x] Sección full-width (edge-to-edge) para collage + horarios
+- [x] Mapa de Google Maps con ubicación
+- [x] Nav social con Facebook, YouTube, Instagram (Font Awesome)
+- [x] Switch día/noche con ThemeContext
 - [x] Autenticación con Firebase Auth
 - [x] Roles: Pastor, Líder, Colaborador
 - [x] Sidebar responsiva con menú por rol
-- [x] Modo oscuro con paleta verde personalizada
-- [x] Gestión de ministerios con roles personalizados
-- [x] Calendario de eventos con vista mensual/lista
-- [x] Grillas de servicio por reunión
-- [x] Confirmación de participación
-- [x] Gestión de tareas con estados
-- [x] Registro de asistencia
-- [x] Reportes y estadísticas
+- [x] Gestión de ministerios, eventos, tareas, asistencia
 - [x] Perfil de usuario
-- [x] Página pública informativa
 - [x] Diseño responsive (mobile-first)
 
 ---
@@ -301,9 +310,31 @@ npm run dev
 ## Próximos Pasos / Roadmap
 
 - [ ] Sincronización completa con Firestore en todas las pantallas
-- [ ] Asignación de roles por ministerio
 - [ ] Notificaciones push
-- [ ] Subida de fotos de perfil a Storage
+- [ ] Subida de fotos a Storage
 - [ ] Exportación de reportes a PDF/Excel
 - [ ] Eventos recurrentes automáticos
-- [ ] Aplicación móvil (API layer)
+
+---
+
+## Notas Técnicas
+
+### Landing page
+- Sin links "Acceso" visibles en la UI, solo `/login` por URL directa
+- Sin bordes/blur en secciones públicas (solo en dashboard)
+- `Public Sans` cargada via Google Fonts `<link>` en layout.tsx
+- `Font Awesome 4.7` cargada via CDN en layout.tsx
+- `framer-motion` para `motion.section` con `initial/whileInView` (fade-in-up)
+- Imágenes con `quality={100}` para máxima calidad
+- Sección de horarios es full-width (edge-to-edge) sin contenedor max-w-5xl
+- Las demas secciones dentro de contenedor `max-w-5xl`
+
+### Theme (globals.css)
+- `@theme` define colores light mode + dark mode via `.dark` class
+- Fondo del body con `radial-gradient` para destellos verdes
+- `bg-card` en dark usa `backdrop-filter: blur(20px)` solo en dashboard
+- Inline script en layout.tsx evita flash de tema incorrecto
+
+### Firebase
+- `auth` y `db` se inicializan lazy (null-safe para SSR)
+- Toda función de Firebase guarda con `if (!auth || !db) return`

@@ -20,10 +20,10 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 
 ### Dashboard Protegido
 - Panel principal según el rol del usuario
-- Sidebar fija anclada a la izquierda, solo el contenido derecho scrollea
+- Sidebar fija anclada a la izquierda con avatar del usuario (foto o iniciales), solo el contenido derecho scrollea
 - Badge rojo con contador de notificaciones no leídas en el sidebar
-- Hover effects consistentes: logo SIDS, icono usuario, nombre y rol heredan colores de hover como los items del menú
-- Perfil de usuario editable (nombre, teléfono, foto con canvas compression, preferencia de notificaciones)
+- Hover effects consistentes: logo SIDS, avatar, nombre y rol heredan colores de hover como los items del menú
+- Perfil de usuario editable (nombre, teléfono, foto con canvas compression a base64, preferencia de notificaciones)
 
 ### Gestión de Ministerios
 - CRUD completo de ministerios con roles personalizados (solo pastor crea/elimina)

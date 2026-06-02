@@ -31,7 +31,7 @@ export default function PerfilPage() {
     if (!file || !user) return
     setUploading(true)
     try {
-      const base64 = await compressImage(file, 400, 0.7)
+      const base64 = await compressImage(file, 200, 0.7)
       await updateUserData({ fotoURL: base64 } as any)
       setFotoURL(base64)
       toast.success("Foto de perfil actualizada")
@@ -42,20 +42,20 @@ export default function PerfilPage() {
     }
   }
 
-  function compressImage(file: File, maxWidth: number, quality: number): Promise<string> {
+  function compressImage(file: File, size: number, quality: number): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => {
         const img = new Image()
         img.onload = () => {
-          const scale = Math.min(1, maxWidth / img.width)
-          const w = Math.round(img.width * scale)
-          const h = Math.round(img.height * scale)
           const canvas = document.createElement("canvas")
-          canvas.width = w
-          canvas.height = h
+          canvas.width = size
+          canvas.height = size
           const ctx = canvas.getContext("2d")!
-          ctx.drawImage(img, 0, 0, w, h)
+          const s = Math.min(img.width, img.height)
+          const sx = (img.width - s) / 2
+          const sy = (img.height - s) / 2
+          ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size)
           canvas.toBlob(
             (blob) => {
               if (!blob) return reject(new Error("Canvas toBlob failed"))
@@ -97,13 +97,10 @@ export default function PerfilPage() {
         <CardHeader className="text-center">
           <div className="relative inline-block">
             <Avatar className="h-24 w-24 mx-auto">
-              {fotoURL ? (
-                <AvatarImage src={fotoURL} alt="Foto de perfil" />
-              ) : (
-                <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                  {userData?.nombre?.[0]}{userData?.apellido?.[0]}
-                </AvatarFallback>
-              )}
+              <AvatarImage src={fotoURL || undefined} alt="Foto de perfil" />
+              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                {userData?.nombre?.[0]}{userData?.apellido?.[0]}
+              </AvatarFallback>
             </Avatar>
             <input
               ref={inputRef}

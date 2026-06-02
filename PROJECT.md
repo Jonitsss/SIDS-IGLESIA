@@ -341,7 +341,7 @@ npm run dev
 
 ## Próximos Pasos / Roadmap
 
-- [x] Subida de fotos a Firebase Storage
+- [x] Subida de fotos de perfil (base64 + canvas compression, almacenado en Firestore sin Storage) con recorte 1:1
 - [ ] Exportación de reportes a PDF/Excel
 - [ ] Eventos recurrentes automáticos
 - [ ] Notificaciones push
@@ -369,6 +369,13 @@ npm run dev
 - `bg-card` en dark usa `backdrop-filter: blur(20px)` solo en dashboard
 - Inline script en layout.tsx evita flash de tema incorrecto
 
+### Foto de perfil (base64)
+- Sin Firebase Storage: la imagen se procesa en el cliente via `<canvas>`
+- Recorte cuadrado 1:1 desde el centro de la imagen original
+- Redimension a 200×200px y exportación JPEG calidad 0.7 via `canvas.toBlob()`
+- El string base64 (~30-110KB) se almacena directamente en el campo `fotoURL` del documento Firestore del usuario
+- Se usa `AvatarImage` + `AvatarFallback` de Radix UI siempre juntos para que el ciclo de carga funcione correctamente
+
 ### Firebase
 - `auth` y `db` se inicializan lazy (null-safe para SSR)
 - Toda función de Firebase guarda con `if (!auth || !db) return`
@@ -383,6 +390,10 @@ npm run dev
 - `fetchUserData` busca el documento del usuario en este orden: (1) `doc(db, "usuarios", uid)`, (2) `where("authUid")`, (3) `where("email")`. Si el email existe, lo vincula automáticamente.
 - `register` busca un pre-perfil con email case-insensitive; si existe lo vincula seteando `authUid`, si no crea un doc nuevo en `usuarios/{uid}`.
 - `updateUserData` usa el mismo patrón de búsqueda por uid → authUid.
+
+### Avatar en Sidebar y listas
+- El footer del sidebar y la lista de `/usuarios` muestran el avatar con `<AvatarImage>` (foto si existe, iniciales como fallback)
+- En el perfil, el botón de cámara dispara un `<input type="file">` oculto que ejecuta la compresión y guarda en Firestore
 
 ### Notificaciones
 - Se crean al guardar asignaciones nuevas en cronogramas y al crear tareas con responsable

@@ -334,13 +334,14 @@ npm run dev
 - [x] Eliminación en cascada: evento → cronogramas → notificaciones
 - [x] Eliminación en cascada: ministerio → notificaciones → referencias en usuarios
 - [x] Perfil de usuario con toggle de notificaciones
+- [x] Hover effects consistentes: logo, icono usuario, nombre y rol heredan colores de hover como los items del menú
 - [x] Diseño responsive (mobile-first)
 
 ---
 
 ## Próximos Pasos / Roadmap
 
-- [ ] Subida de fotos a Storage
+- [x] Subida de fotos a Firebase Storage
 - [ ] Exportación de reportes a PDF/Excel
 - [ ] Eventos recurrentes automáticos
 - [ ] Notificaciones push

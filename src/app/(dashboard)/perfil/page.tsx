@@ -1,21 +1,26 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Camera, Save } from "lucide-react"
+import { Camera, Save, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { storage } from "@/lib/firebase"
 
 export default function PerfilPage() {
-  const { userData, updateUserData } = useAuth()
+  const { user, userData, updateUserData } = useAuth()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [fotoURL, setFotoURL] = useState(userData?.fotoURL || "")
   const [form, setForm] = useState({
     nombre: userData?.nombre || "",
     apellido: userData?.apellido || "",
@@ -23,9 +28,28 @@ export default function PerfilPage() {
     notificaciones: userData?.notificaciones ?? true,
   })
 
+  const handleFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !storage || !user) return
+    setUploading(true)
+    try {
+      const path = `perfiles/${user.uid}/${Date.now()}_${file.name}`
+      const storageRef = ref(storage, path)
+      await uploadBytes(storageRef, file)
+      const url = await getDownloadURL(storageRef)
+      await updateUserData({ fotoURL: url } as any)
+      setFotoURL(url)
+      toast.success("Foto de perfil actualizada")
+    } catch {
+      toast.error("Error al subir la foto")
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleSave = async () => {
     try {
-      await updateUserData({ ...form, notificaciones: form.notificaciones })
+      await updateUserData({ ...form, fotoURL, notificaciones: form.notificaciones } as any)
       toast.success("Perfil actualizado")
       setEditing(false)
     } catch {
@@ -44,12 +68,29 @@ export default function PerfilPage() {
         <CardHeader className="text-center">
           <div className="relative inline-block">
             <Avatar className="h-24 w-24 mx-auto">
-              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                {userData?.nombre?.[0]}{userData?.apellido?.[0]}
-              </AvatarFallback>
+              {fotoURL ? (
+                <AvatarImage src={fotoURL} alt="Foto de perfil" />
+              ) : (
+                <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                  {userData?.nombre?.[0]}{userData?.apellido?.[0]}
+                </AvatarFallback>
+              )}
             </Avatar>
-            <Button variant="outline" size="icon" className="absolute bottom-0 right-0 rounded-full h-8 w-8">
-              <Camera className="h-4 w-4" />
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFoto}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             </Button>
           </div>
           <div className="mt-4">

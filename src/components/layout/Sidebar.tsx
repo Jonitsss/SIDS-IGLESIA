@@ -55,7 +55,6 @@ const menuItems = {
     { href: "/tareas", icon: CheckSquare, label: "Mis Tareas" },
     { href: "/eventos", icon: Calendar, label: "Eventos" },
     { href: "/notificaciones", icon: Bell, label: "Notificaciones" },
-    { href: "/perfil", icon: UserCircle, label: "Mi Perfil" },
   ],
 }
 
@@ -82,7 +81,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         )}
       >
         <div className="flex items-center justify-between p-4 border-b shrink-0">
-          <Link href="/dashboard" className="font-bold text-lg">
+          <Link href="/dashboard" className="font-bold text-lg text-foreground hover:text-primary transition-colors">
             SIDS
           </Link>
           <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden">
@@ -115,13 +114,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className="border-t p-3 space-y-2 shrink-0">
-          <div className="flex items-center gap-3 px-3 py-2 text-sm">
-            <UserCircle className="h-5 w-5 text-muted-foreground" />
+          <Link href="/perfil" onClick={onClose} className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+            <UserCircle className="h-5 w-5" />
             <div className="flex-1 min-w-0">
               <p className="truncate font-medium">{userData?.nombre} {userData?.apellido}</p>
-              <p className="text-xs text-muted-foreground capitalize">{userData?.rol}</p>
+              <p className="text-xs capitalize">{userData?.rol}</p>
             </div>
-          </div>
+          </Link>
           <div className="flex gap-1">
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="flex-1">
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}

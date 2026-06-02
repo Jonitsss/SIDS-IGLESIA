@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -294,6 +294,7 @@ export default function UsuariosPage() {
               {filtered.map((u) => (
                 <div key={u.id} className="flex items-center gap-3 p-4 group">
                   <Avatar>
+                    <AvatarImage src={u.fotoURL} alt="Foto" />
                     <AvatarFallback className="bg-primary/10 text-primary">
                       {u.nombre?.[0]}{u.apellido?.[0]}
                     </AvatarFallback>

@@ -23,7 +23,7 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 - Sidebar fija anclada a la izquierda, solo el contenido derecho scrollea
 - Badge rojo con contador de notificaciones no leídas en el sidebar
 - Hover effects consistentes: logo SIDS, icono usuario, nombre y rol heredan colores de hover como los items del menú
-- Perfil de usuario editable (nombre, teléfono, preferencia de notificaciones)
+- Perfil de usuario editable (nombre, teléfono, foto con canvas compression, preferencia de notificaciones)
 
 ### Gestión de Ministerios
 - CRUD completo de ministerios con roles personalizados (solo pastor crea/elimina)

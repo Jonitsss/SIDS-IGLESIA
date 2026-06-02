@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNotificaciones } from "@/hooks/useNotificaciones"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import {
   LayoutDashboard,
   Users,
@@ -115,7 +116,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         <div className="border-t p-3 space-y-2 shrink-0">
           <Link href="/perfil" onClick={onClose} className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
-            <UserCircle className="h-5 w-5" />
+            <Avatar className="h-7 w-7">
+              <AvatarImage src={userData?.fotoURL} alt="Foto" />
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                {userData?.nombre?.[0]}{userData?.apellido?.[0]}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <p className="truncate font-medium">{userData?.nombre} {userData?.apellido}</p>
               <p className="text-xs capitalize">{userData?.rol}</p>

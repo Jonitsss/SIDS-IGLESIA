@@ -12,8 +12,6 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Camera, Save, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
-import { storage } from "@/lib/firebase"
 
 export default function PerfilPage() {
   const { user, userData, updateUserData } = useAuth()
@@ -30,21 +28,52 @@ export default function PerfilPage() {
 
   const handleFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !storage || !user) return
+    if (!file || !user) return
     setUploading(true)
     try {
-      const path = `perfiles/${user.uid}/${Date.now()}_${file.name}`
-      const storageRef = ref(storage, path)
-      await uploadBytes(storageRef, file)
-      const url = await getDownloadURL(storageRef)
-      await updateUserData({ fotoURL: url } as any)
-      setFotoURL(url)
+      const base64 = await compressImage(file, 400, 0.7)
+      await updateUserData({ fotoURL: base64 } as any)
+      setFotoURL(base64)
       toast.success("Foto de perfil actualizada")
     } catch {
       toast.error("Error al subir la foto")
     } finally {
       setUploading(false)
     }
+  }
+
+  function compressImage(file: File, maxWidth: number, quality: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const img = new Image()
+        img.onload = () => {
+          const scale = Math.min(1, maxWidth / img.width)
+          const w = Math.round(img.width * scale)
+          const h = Math.round(img.height * scale)
+          const canvas = document.createElement("canvas")
+          canvas.width = w
+          canvas.height = h
+          const ctx = canvas.getContext("2d")!
+          ctx.drawImage(img, 0, 0, w, h)
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) return reject(new Error("Canvas toBlob failed"))
+              const fr = new FileReader()
+              fr.onload = () => resolve(fr.result as string)
+              fr.onerror = () => reject(fr.error)
+              fr.readAsDataURL(blob)
+            },
+            "image/jpeg",
+            quality
+          )
+        }
+        img.onerror = () => reject(new Error("Image load failed"))
+        img.src = reader.result as string
+      }
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(file)
+    })
   }
 
   const handleSave = async () => {

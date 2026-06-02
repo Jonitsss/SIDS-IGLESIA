@@ -333,7 +333,7 @@ npm run dev
 - [x] Notificación automática al ser asignado a un ministerio
 - [x] Eliminación en cascada: evento → cronogramas → notificaciones
 - [x] Eliminación en cascada: ministerio → notificaciones → referencias en usuarios
-- [x] Perfil de usuario con toggle de notificaciones
+- [x] Perfil de usuario con toggle de notificaciones y subida de foto (base64 + canvas compression en Firestore, sin Storage)
 - [x] Hover effects consistentes: logo, icono usuario, nombre y rol heredan colores de hover como los items del menú
 - [x] Diseño responsive (mobile-first)
 

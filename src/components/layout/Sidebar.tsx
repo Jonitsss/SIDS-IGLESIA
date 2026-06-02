@@ -117,7 +117,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <div className="border-t p-3 space-y-2 shrink-0">
           <Link href="/perfil" onClick={onClose} className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
             <Avatar className="h-7 w-7">
-              <AvatarImage src={userData?.fotoURL} alt="Foto" />
+              <AvatarImage src={userData?.fotoURL} alt="Foto" className="object-cover" />
               <AvatarFallback className="text-xs bg-primary/10 text-primary">
                 {userData?.nombre?.[0]}{userData?.apellido?.[0]}
               </AvatarFallback>

@@ -97,7 +97,7 @@ export default function PerfilPage() {
         <CardHeader className="text-center">
           <div className="relative inline-block">
             <Avatar className="h-24 w-24 mx-auto">
-              <AvatarImage src={fotoURL || undefined} alt="Foto de perfil" />
+              <AvatarImage src={fotoURL || undefined} alt="Foto de perfil" className="object-cover" />
               <AvatarFallback className="text-2xl bg-primary/10 text-primary">
                 {userData?.nombre?.[0]}{userData?.apellido?.[0]}
               </AvatarFallback>

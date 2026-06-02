@@ -335,6 +335,9 @@ npm run dev
 - [x] Eliminación en cascada: ministerio → notificaciones → referencias en usuarios
 - [x] Perfil de usuario con toggle de notificaciones y subida de foto (base64 + canvas compression en Firestore, sin Storage)
 - [x] Hover effects consistentes: logo, icono usuario, nombre y rol heredan colores de hover como los items del menú
+- [x] Login/register redirigen al dashboard si ya hay sesión activa
+- [x] Zoom deshabilitado en mobile (viewport user-scalable=no)
+- [x] object-cover en avatares para evitar distorsión de imagen
 - [x] Diseño responsive (mobile-first)
 
 ---

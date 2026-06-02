@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -22,9 +21,21 @@ export default function RegisterPage() {
     telefono: "",
     rol: "colaborador",
   })
-  const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
+  const [submitting, setSubmitting] = useState(false)
+  const { register, user, loading } = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && user) router.replace("/dashboard")
+  }, [user, loading, router])
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[300px]">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  )
+
+  if (user) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,7 +43,7 @@ export default function RegisterPage() {
       toast.error("Las contraseñas no coinciden")
       return
     }
-    setLoading(true)
+    setSubmitting(true)
     try {
       await register(form.email.toLowerCase().trim(), form.password, {
         nombre: form.nombre,
@@ -50,7 +61,7 @@ export default function RegisterPage() {
       }
       toast.error(mensajes[error.code] || "Error al registrarse")
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
@@ -92,8 +103,8 @@ export default function RegisterPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             Registrarse
           </Button>
           <p className="text-sm text-muted-foreground">

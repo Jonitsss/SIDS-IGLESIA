@@ -294,7 +294,7 @@ export default function UsuariosPage() {
               {filtered.map((u) => (
                 <div key={u.id} className="flex items-center gap-3 p-4 group">
                   <Avatar>
-                    <AvatarImage src={u.fotoURL} alt="Foto" />
+                    <AvatarImage src={u.fotoURL} alt="Foto" className="object-cover" />
                     <AvatarFallback className="bg-primary/10 text-primary">
                       {u.nombre?.[0]}{u.apellido?.[0]}
                     </AvatarFallback>

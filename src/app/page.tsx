@@ -30,7 +30,7 @@ export default function LandingPage() {
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-[#fff9f2] dark:bg-background text-foreground">
       <div
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
@@ -86,6 +86,23 @@ export default function LandingPage() {
             )}
           </button>
         </div>
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16 md:mb-20"
+        >
+          <h1
+            className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight"
+            style={{ fontFamily: "'Cormorant Garamond', serif", color: "#144137" }}
+          >
+            SANTA IGLESIA
+            <br />
+            DEL SEÑOR
+          </h1>
+        </motion.div>
 
         {/* Section 1 — Dra. Magdalena */}
         <motion.section

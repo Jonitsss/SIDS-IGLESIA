@@ -21,6 +21,7 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 | Font Awesome | 4.7 (CDN) | Iconos sociales (fa-facebook, fa-youtube-play, fa-instagram) |
 | sonner | - | Toast notifications |
 | Public Sans | Google Fonts | Tipografía principal |
+| Cormorant Garamond | Google Fonts | Tipografía decorativa (landing page) |
 
 ---
 
@@ -38,7 +39,7 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 
 ### Modo Claro (day mode)
 ```
-#FFFFFF ██  Fondo principal
+#fff9f2 ██  Fondo principal (crema)
 #0a0a0a ██  Texto foreground
 #666666 ██  Texto muted
 #2A6A47 ██  Primary / acentos (más oscuro en light)
@@ -112,7 +113,7 @@ sids-iglesia/
 
 | Ruta | Acceso | Descripción |
 |---|---|---|
-| `/` | Público | Landing page (Quiénes Somos, Obispo, Músicos+Horarios, Mapa) |
+| `/` | Público | Landing page (SANTA IGLESIA DEL SEÑOR, Quiénes Somos, Obispo, Músicos+Horarios, Mapa) |
 | `/login` | Público | Inicio de sesión (normaliza email a minúscula) |
 | `/register` | Público | Registro con vinculación de pre-perfil por email case-insensitive |
 | `/publico` | Público | Redirecciona a `/` |
@@ -306,7 +307,8 @@ npm run dev
 ## Características Principales
 
 - [x] Landing page minimalista con modo oscuro/claro
-- [x] Fondo con radial-gradients verdes y parallax
+- [x] Fondo crema #fff9f2 en modo claro, oscuro con radial-gradients verdes
+- [x] Header "SANTA IGLESIA DEL SEÑOR" con Cormorant Garamond (#144137)
 - [x] Sección full-width (edge-to-edge) para collage + horarios
 - [x] Mapa de Google Maps con ubicación
 - [x] Nav social con Facebook, YouTube, Instagram (Font Awesome)
@@ -344,11 +346,14 @@ npm run dev
 - Sin links "Acceso" visibles en la UI, solo `/login` por URL directa
 - Sin bordes/blur en secciones públicas (solo en dashboard)
 - `Public Sans` cargada via Google Fonts `<link>` en layout.tsx
+- `Cormorant Garamond` cargada como segunda fuente para el header decorativo
 - `Font Awesome 4.7` cargada via CDN en layout.tsx
 - `framer-motion` para `motion.section` con `initial/whileInView` (fade-in-up)
 - Imágenes con `quality={100}` para máxima calidad
 - Sección de horarios es full-width (edge-to-edge) sin contenedor max-w-5xl
 - Las demas secciones dentro de contenedor `max-w-5xl`
+- Header "SANTA IGLESIA DEL SEÑOR" con `Cormorant Garamond`, color #144137
+- Fondo light mode `#fff9f2` (crema), dark mode mantiene `bg-background`
 
 ### Theme (globals.css)
 - `@theme` define colores light mode + dark mode via `.dark` class

@@ -3,7 +3,7 @@ import "./globals.css"
 import { Providers } from "./providers"
 
 export const metadata: Metadata = {
-  title: "SIDS | Una familia con propósito",
+  title: "SIDS",
   description: "Te esperamos con las puertas abiertas. Jueves 20hs, Sábado 19hs, Domingo 18hs.",
 }
 

@@ -1,17 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Tarea } from "@/types"
-import { obtenerDocumentos, where, orderBy } from "@/lib/firestore"
+import { obtenerDocumentos, where } from "@/lib/firestore"
 
 export function useTareas(usuarioId?: string, ministerioId?: string) {
   const [tareas, setTareas] = useState<Tarea[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    const fetch = async () => {
+    let mounted = true
+    ;(async () => {
       try {
-        const c: any[] = [orderBy("fechaLimite", "asc")]
+        const c: any[] = []
         if (usuarioId) {
           c.push(where("responsableId", "==", usuarioId))
         }
@@ -19,15 +21,18 @@ export function useTareas(usuarioId?: string, ministerioId?: string) {
           c.push(where("ministerioId", "==", ministerioId))
         }
         const data = await obtenerDocumentos<Tarea>("tareas", c)
-        setTareas(data)
+        data.sort((a, b) => new Date(a.fechaLimite).getTime() - new Date(b.fechaLimite).getTime())
+        if (mounted) setTareas(data)
       } catch (error) {
-        console.error("Error fetching tareas:", error)
+        if (mounted) console.error("Error fetching tareas:", error)
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
-    }
-    fetch()
-  }, [usuarioId, ministerioId])
+    })()
+    return () => { mounted = false }
+  }, [usuarioId, ministerioId, refreshKey])
 
-  return { tareas, loading }
+  const refetch = useCallback(() => setRefreshKey((k) => k + 1), [])
+
+  return { tareas, loading, refetch, setTareas }
 }

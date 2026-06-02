@@ -19,6 +19,8 @@ export interface Usuario {
   rol: Rol
   ministerioIds: string[]
   fotoURL: string
+  authUid?: string
+  notificaciones: boolean
   activo: boolean
   createdAt: Date
   updatedAt: Date

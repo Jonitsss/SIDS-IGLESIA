@@ -1,15 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Evento } from "@/types"
 import { obtenerDocumentos, where, orderBy } from "@/lib/firestore"
 
 export function useEventos(fechaInicio?: Date, fechaFin?: Date) {
   const [eventos, setEventos] = useState<Evento[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    const fetch = async () => {
+    let mounted = true
+    ;(async () => {
       try {
         const c: any[] = [orderBy("fecha", "asc")]
         if (fechaInicio) {
@@ -19,15 +21,17 @@ export function useEventos(fechaInicio?: Date, fechaFin?: Date) {
           c.push(where("fecha", "<=", fechaFin))
         }
         const data = await obtenerDocumentos<Evento>("eventos", c)
-        setEventos(data)
+        if (mounted) setEventos(data)
       } catch (error) {
-        console.error("Error fetching eventos:", error)
+        if (mounted) console.error("Error fetching eventos:", error)
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
-    }
-    fetch()
-  }, [fechaInicio, fechaFin])
+    })()
+    return () => { mounted = false }
+  }, [fechaInicio, fechaFin, refreshKey])
 
-  return { eventos, loading }
+  const refetch = useCallback(() => setRefreshKey((k) => k + 1), [])
+
+  return { eventos, loading, refetch, setEventos }
 }

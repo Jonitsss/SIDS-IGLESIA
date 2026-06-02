@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   X,
+  Bell,
 } from "lucide-react"
 import { useTheme } from "@/contexts/ThemeContext"
 
@@ -35,6 +36,7 @@ const menuItems = {
     { href: "/cronogramas", icon: ClipboardList, label: "Cronogramas" },
     { href: "/tareas", icon: CheckSquare, label: "Tareas" },
     { href: "/asistencia", icon: Users, label: "Asistencia" },
+    { href: "/notificaciones", icon: Bell, label: "Notificaciones" },
     { href: "/usuarios", icon: UserCircle, label: "Usuarios" },
     { href: "/reportes", icon: BarChart3, label: "Reportes" },
   ],
@@ -45,12 +47,14 @@ const menuItems = {
     { href: "/cronogramas", icon: ClipboardList, label: "Cronogramas" },
     { href: "/tareas", icon: CheckSquare, label: "Tareas" },
     { href: "/asistencia", icon: Users, label: "Asistencia" },
+    { href: "/notificaciones", icon: Bell, label: "Notificaciones" },
   ],
   colaborador: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/cronogramas", icon: ClipboardList, label: "Mis Asignaciones" },
     { href: "/tareas", icon: CheckSquare, label: "Mis Tareas" },
     { href: "/eventos", icon: Calendar, label: "Eventos" },
+    { href: "/notificaciones", icon: Bell, label: "Notificaciones" },
     { href: "/perfil", icon: UserCircle, label: "Mi Perfil" },
   ],
 }

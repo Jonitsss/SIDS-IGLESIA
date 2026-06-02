@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,52 +11,117 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, CheckCircle2, Circle, Loader2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
-
-type EstadoTarea = "pendiente" | "en_progreso" | "completada"
-
-interface TareaItem {
-  id: string
-  titulo: string
-  descripcion: string
-  responsable: string
-  fechaLimite: string
-  estado: EstadoTarea
-  ministerio: string
-}
+import { useAuth } from "@/contexts/AuthContext"
+import { useTareas } from "@/hooks/useTareas"
+import { useMinisterios } from "@/hooks/useMinisterios"
+import { crearDocumento, eliminarDocumento, actualizarDocumento } from "@/lib/firestore"
+import { obtenerDocumentos } from "@/lib/firestore"
+import { Tarea, Usuario, Notificacion, EstadoTarea } from "@/types"
 
 export default function TareasPage() {
-  const [tareas, setTareas] = useState<TareaItem[]>([])
+  const { userData } = useAuth()
+  const { tareas, loading, refetch, setTareas } = useTareas()
+  const { ministerios } = useMinisterios()
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [filtro, setFiltro] = useState<EstadoTarea | "todas">("todas")
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ titulo: "", descripcion: "", responsable: "", fechaLimite: "", ministerio: "" })
+  const [form, setForm] = useState({
+    titulo: "",
+    descripcion: "",
+    responsableId: "",
+    fechaLimite: "",
+    ministerioId: "",
+  })
+
+  const esPastor = userData?.rol === "pastor"
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const data = await obtenerDocumentos<Usuario>("usuarios")
+      const mapa = new Map<string, Usuario>()
+      for (const u of data) {
+        const key = u.email?.toLowerCase() || u.id
+        const existing = mapa.get(key)
+        if (existing && existing.authUid && !u.authUid) continue
+        mapa.set(key, u)
+      }
+      if (mounted) setUsuarios(Array.from(mapa.values()))
+    })()
+    return () => { mounted = false }
+  }, [])
 
   const filtered = filtro === "todas" ? tareas : tareas.filter((t) => t.estado === filtro)
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.titulo) return
-    const nueva: TareaItem = {
-      id: String(Date.now()),
-      ...form,
-      estado: "pendiente",
+    try {
+      await crearDocumento<Tarea>("tareas", {
+        titulo: form.titulo,
+        descripcion: form.descripcion,
+        responsableId: form.responsableId,
+        ministerioId: form.ministerioId,
+        eventoId: "",
+        fechaLimite: form.fechaLimite ? new Date(form.fechaLimite) : new Date(),
+        estado: "pendiente",
+        creadoPor: userData?.id || "",
+      })
+
+      if (form.responsableId) {
+        const userDoc = usuarios.find((u) => u.id === form.responsableId)
+        console.log("[Tareas] userDoc seleccionado:", userDoc?.id, userDoc?.email, "authUid:", userDoc?.authUid, "notificaciones:", userDoc?.notificaciones)
+        if (userDoc?.notificaciones !== false) {
+          const min = ministerios.find((m) => m.id === form.ministerioId)
+          const destId = userDoc?.authUid || form.responsableId
+          console.log("[Tareas] Creando notificación para usuarioId:", destId)
+          await crearDocumento<Notificacion>("notificaciones", {
+            usuarioId: destId,
+            titulo: "Nueva tarea asignada",
+            mensaje: `Te asignaron la tarea "${form.titulo}"${min ? ` en ${min.nombre}` : ""}`,
+            leido: false,
+            tipo: "tarea",
+            referenciaId: "",
+          })
+        } else {
+          console.log("[Tareas] Usuario tiene notificaciones desactivadas, se omite")
+        }
+      }
+
+      toast.success("Tarea creada exitosamente")
+      setOpen(false)
+      setForm({ titulo: "", descripcion: "", responsableId: "", fechaLimite: "", ministerioId: "" })
+      refetch()
+    } catch {
+      toast.error("Error al crear tarea")
     }
-    setTareas([nueva, ...tareas])
-    toast.success("Tarea creada exitosamente")
-    setOpen(false)
-    setForm({ titulo: "", descripcion: "", responsable: "", fechaLimite: "", ministerio: "" })
   }
 
-  const handleDelete = (id: string, titulo: string) => {
+  const handleDelete = async (id: string, titulo: string) => {
     if (!confirm(`¿Eliminar la tarea "${titulo}"?`)) return
-    setTareas(tareas.filter((t) => t.id !== id))
-    toast.success("Tarea eliminada")
+    setTareas((prev) => prev.filter((t) => t.id !== id))
+    try {
+      await eliminarDocumento("tareas", id)
+      toast.success("Tarea eliminada")
+    } catch {
+      toast.error("Error al eliminar tarea")
+      refetch()
+    }
   }
 
-  const toggleEstado = (id: string) => {
-    setTareas(tareas.map((t) => {
-      if (t.id !== id) return t
-      const next: Record<EstadoTarea, EstadoTarea> = { pendiente: "en_progreso", en_progreso: "completada", completada: "pendiente" }
-      return { ...t, estado: next[t.estado] }
-    }))
+  const toggleEstado = async (id: string, estadoActual: EstadoTarea) => {
+    const next: Record<EstadoTarea, EstadoTarea> = {
+      pendiente: "en_progreso",
+      en_progreso: "completada",
+      completada: "pendiente",
+    }
+    const nuevo = next[estadoActual]
+    setTareas((prev) => prev.map((t) => (t.id === id ? { ...t, estado: nuevo } : t)))
+    try {
+      await actualizarDocumento("tareas", id, { estado: nuevo })
+    } catch {
+      toast.error("Error al actualizar estado")
+      refetch()
+    }
   }
 
   const estadoBadge: Record<EstadoTarea, "secondary" | "warning" | "success"> = {
@@ -71,11 +136,8 @@ export default function TareasPage() {
     completada: "Completada",
   }
 
-  const estadoIcon: Record<EstadoTarea, any> = {
-    pendiente: Circle,
-    en_progreso: Loader2,
-    completada: CheckCircle2,
-  }
+  const getResponsable = (id: string) => usuarios.find((u) => u.id === id)
+  const getMinisterio = (id: string) => ministerios.find((m) => m.id === id)
 
   return (
     <div className="space-y-6">
@@ -106,18 +168,25 @@ export default function TareasPage() {
               </div>
               <div className="space-y-2">
                 <Label>Responsable</Label>
-                <Input value={form.responsable} onChange={(e) => setForm({ ...form, responsable: e.target.value })} placeholder="Nombre del responsable" />
+                <Select value={form.responsableId} onValueChange={(v) => setForm({ ...form, responsableId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar responsable" /></SelectTrigger>
+                  <SelectContent>
+                    {usuarios.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.nombre} {u.apellido}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Ministerio</Label>
-                <Select value={form.ministerio} onValueChange={(v) => setForm({ ...form, ministerio: v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                <Select value={form.ministerioId} onValueChange={(v) => setForm({ ...form, ministerioId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar ministerio" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Diáconos">Diáconos</SelectItem>
-                    <SelectItem value="Músicos">Músicos</SelectItem>
-                    <SelectItem value="Sonido">Sonido</SelectItem>
-                    <SelectItem value="Multimedia">Multimedia</SelectItem>
-                    <SelectItem value="Escuela Bíblica">Escuela Bíblica</SelectItem>
+                    {ministerios.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -139,7 +208,13 @@ export default function TareasPage() {
         ))}
       </div>
 
-      {tareas.length === 0 ? (
+      {loading ? (
+        <Card>
+          <CardContent className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      ) : tareas.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
             <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-30" />
@@ -150,33 +225,41 @@ export default function TareasPage() {
       ) : (
         <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((tarea) => {
-            const Icon = estadoIcon[tarea.estado]
+            const Icon = estadoLabel[tarea.estado] === "Pendiente" ? Circle :
+              tarea.estado === "en_progreso" ? Loader2 : CheckCircle2
+            const resp = getResponsable(tarea.responsableId)
+            const min = getMinisterio(tarea.ministerioId)
             return (
               <Card key={tarea.id} className="group">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-2 flex-1 min-w-0" onClick={() => toggleEstado(tarea.id)}>
+                    <div className="flex items-start gap-2 flex-1 min-w-0" onClick={() => toggleEstado(tarea.id, tarea.estado)}>
                       <Icon className={`h-5 w-5 mt-0.5 shrink-0 cursor-pointer ${tarea.estado === "completada" ? "text-emerald-500" : tarea.estado === "en_progreso" ? "text-amber-500 animate-spin" : "text-muted-foreground"}`} />
                       <div className="min-w-0">
                         <CardTitle className="text-sm cursor-pointer hover:text-primary transition-colors">{tarea.titulo}</CardTitle>
                         <p className="text-xs text-muted-foreground truncate">{tarea.descripcion}</p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 opacity-0 group-hover:opacity-100 text-destructive h-6 w-6"
-                      onClick={() => handleDelete(tarea.id, tarea.titulo)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    {esPastor && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 h-6 w-6"
+                        onClick={() => handleDelete(tarea.id, tarea.titulo)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-xs">
                     <div className="space-y-1">
-                      <p className="text-muted-foreground">{tarea.responsable}</p>
-                      <p className="text-muted-foreground">Vence: {tarea.fechaLimite}</p>
+                      <p className="text-muted-foreground">{resp ? `${resp.nombre} ${resp.apellido}` : "Sin responsable"}</p>
+                      {min && <p className="text-muted-foreground">{min.nombre}</p>}
+                      <p className="text-muted-foreground">
+                        Vence: {tarea.fechaLimite ? new Date(tarea.fechaLimite).toLocaleDateString() : "-"}
+                      </p>
                     </div>
                     <Badge variant={estadoBadge[tarea.estado]}>{estadoLabel[tarea.estado]}</Badge>
                   </div>

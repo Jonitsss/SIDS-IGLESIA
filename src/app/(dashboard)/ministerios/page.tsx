@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Church, Music, Volume2, Monitor, BookOpen, Trash2 } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
+import { Plus, Church, Music, Volume2, Monitor, BookOpen, Trash2, Loader2 } from "lucide-react"
 import { crearDocumento, eliminarDocumento } from "@/lib/firestore"
 import { Ministerio } from "@/types"
 import { MINISTERIOS_PREDETERMINADOS } from "@/lib/constants"
@@ -18,9 +19,11 @@ import Link from "next/link"
 const iconos: Record<string, any> = { Church, Music, Volume2, Monitor, BookOpen }
 
 export default function MinisteriosPage() {
-  const { ministerios, loading } = useMinisterios()
+  const { ministerios, loading, refetch } = useMinisterios()
+  const { userData } = useAuth()
+  const esPastor = userData?.rol === "pastor"
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ nombre: "", descripcion: "", roles: "" })
+  const [form, setForm] = useState({ nombre: "", descripcion: "" })
 
   const handleCreate = async () => {
     if (!form.nombre) return
@@ -28,7 +31,7 @@ export default function MinisteriosPage() {
       await crearDocumento<Ministerio>("ministerios", {
         nombre: form.nombre,
         descripcion: form.descripcion,
-        roles: form.roles.split(",").map((r) => r.trim()).filter(Boolean),
+        roles: [],
         liderId: "",
         color: "#73A243",
         icono: "Church",
@@ -36,7 +39,8 @@ export default function MinisteriosPage() {
       })
       toast.success("Ministerio creado exitosamente")
       setOpen(false)
-      setForm({ nombre: "", descripcion: "", roles: "" })
+      setForm({ nombre: "", descripcion: "" })
+      refetch()
     } catch {
       toast.error("Error al crear ministerio")
     }
@@ -47,6 +51,7 @@ export default function MinisteriosPage() {
     try {
       await eliminarDocumento("ministerios", id)
       toast.success("Ministerio eliminado")
+      refetch()
     } catch {
       toast.error("Error al eliminar ministerio")
     }
@@ -79,17 +84,19 @@ export default function MinisteriosPage() {
                 <Label>Descripción</Label>
                 <Input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder="Descripción breve" />
               </div>
-              <div className="space-y-2">
-                <Label>Roles (separados por coma)</Label>
-                <Input value={form.roles} onChange={(e) => setForm({ ...form, roles: e.target.value })} placeholder="Voz Principal, Guitarra, Bajo" />
-              </div>
               <Button onClick={handleCreate} className="w-full">Crear</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {ministerios.length === 0 ? (
+      {loading ? (
+        <Card>
+          <CardContent className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      ) : ministerios.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
             <Church className="h-12 w-12 mx-auto mb-4 opacity-30" />
@@ -113,14 +120,16 @@ export default function MinisteriosPage() {
                       <p className="text-xs text-muted-foreground truncate">{m.descripcion}</p>
                     </div>
                   </Link>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                    onClick={() => handleDelete(m.id, m.nombre)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {esPastor && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80"
+                      onClick={() => handleDelete(m.id, m.nombre)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-1">

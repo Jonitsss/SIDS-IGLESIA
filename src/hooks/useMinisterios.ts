@@ -1,28 +1,32 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Ministerio } from "@/types"
 import { obtenerDocumentos, where } from "@/lib/firestore"
 
 export function useMinisterios() {
   const [ministerios, setMinisterios] = useState<Ministerio[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
-    const fetch = async () => {
+    let mounted = true
+    ;(async () => {
       try {
         const data = await obtenerDocumentos<Ministerio>("ministerios", [
           where("activo", "==", true),
         ])
-        setMinisterios(data)
+        if (mounted) setMinisterios(data)
       } catch (error) {
-        console.error("Error fetching ministerios:", error)
+        if (mounted) console.error("Error fetching ministerios:", error)
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
-    }
-    fetch()
-  }, [])
+    })()
+    return () => { mounted = false }
+  }, [refreshKey])
 
-  return { ministerios, loading }
+  const refetch = useCallback(() => setRefreshKey((k) => k + 1), [])
+
+  return { ministerios, loading, refetch, setMinisterios }
 }

@@ -6,11 +6,12 @@ import { Ministerio, Usuario } from "@/types"
 import { obtenerDocumento, obtenerDocumentos, where, actualizarDocumento } from "@/lib/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, UserPlus, Settings } from "lucide-react"
+import { ArrowLeft, UserPlus, Settings, Plus, Trash2, Save, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
@@ -20,27 +21,57 @@ export default function MinisterioDetailPage() {
   const [ministerio, setMinisterio] = useState<Ministerio | null>(null)
   const [miembros, setMiembros] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
+  const [roles, setRoles] = useState<string[]>([])
+  const [nuevoRol, setNuevoRol] = useState("")
+  const [savingRoles, setSavingRoles] = useState(false)
 
   useEffect(() => {
-    const fetch = async () => {
+    let mounted = true
+    ;(async () => {
       try {
         const m = await obtenerDocumento<Ministerio>("ministerios", id)
+        if (!mounted) return
         setMinisterio(m)
         if (m) {
+          setRoles(m.roles || [])
           const usuarios = await obtenerDocumentos<Usuario>("usuarios", [
             where("ministerioIds", "array-contains", id),
             where("activo", "==", true),
           ])
-          setMiembros(usuarios)
+          if (mounted) setMiembros(usuarios)
         }
       } catch (error) {
-        console.error(error)
+        if (mounted) console.error(error)
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
-    }
-    fetch()
+    })()
+    return () => { mounted = false }
   }, [id])
+
+  const handleAddRol = () => {
+    const rol = nuevoRol.trim()
+    if (!rol || roles.includes(rol)) return
+    setRoles([...roles, rol])
+    setNuevoRol("")
+  }
+
+  const handleRemoveRol = (rol: string) => {
+    setRoles(roles.filter((r) => r !== rol))
+  }
+
+  const handleSaveRoles = async () => {
+    setSavingRoles(true)
+    try {
+      await actualizarDocumento("ministerios", id, { roles })
+      setMinisterio((prev) => prev ? { ...prev, roles } : prev)
+      toast.success("Roles guardados")
+    } catch {
+      toast.error("Error al guardar roles")
+    } finally {
+      setSavingRoles(false)
+    }
+  }
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">Cargando...</div>
   if (!ministerio) return <div className="p-8 text-center text-muted-foreground">Ministerio no encontrado</div>
@@ -62,15 +93,11 @@ export default function MinisterioDetailPage() {
             <UserPlus className="h-4 w-4" />
             Agregar Miembro
           </Button>
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4" />
-            Configurar
-          </Button>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {ministerio.roles?.map((rol) => (
+        {roles.map((rol) => (
           <Badge key={rol}>{rol}</Badge>
         ))}
       </div>
@@ -78,7 +105,7 @@ export default function MinisterioDetailPage() {
       <Tabs defaultValue="miembros">
         <TabsList>
           <TabsTrigger value="miembros">Miembros ({miembros.length})</TabsTrigger>
-          <TabsTrigger value="roles">Roles</TabsTrigger>
+          <TabsTrigger value="roles">Roles ({roles.length})</TabsTrigger>
           <TabsTrigger value="config">Configuración</TabsTrigger>
         </TabsList>
 
@@ -114,16 +141,46 @@ export default function MinisterioDetailPage() {
         <TabsContent value="roles">
           <Card>
             <CardHeader>
-              <CardTitle>Roles del Ministerio</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Roles del Ministerio</CardTitle>
+                <Button size="sm" onClick={handleSaveRoles} disabled={savingRoles}>
+                  {savingRoles ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Guardar
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nuevo rol..."
+                  value={nuevoRol}
+                  onChange={(e) => setNuevoRol(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddRol()}
+                />
+                <Button variant="outline" size="icon" onClick={handleAddRol}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="space-y-2">
-                {ministerio.roles?.map((rol) => (
-                  <div key={rol} className="flex items-center justify-between p-3 rounded-lg border">
-                    <span>{rol}</span>
-                    <Badge variant="secondary">Disponible</Badge>
-                  </div>
-                ))}
+                {roles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No hay roles. Agregá el primero arriba.
+                  </p>
+                ) : (
+                  roles.map((rol) => (
+                    <div key={rol} className="flex items-center justify-between p-3 rounded-lg border group">
+                      <span>{rol}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive/80 h-7 w-7"
+                        onClick={() => handleRemoveRol(rol)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

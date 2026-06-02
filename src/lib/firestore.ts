@@ -31,8 +31,11 @@ export async function obtenerDocumentos<T>(
   return snapshot.docs.map((doc) => {
     const data = doc.data() as DocumentData
     return {
-      id: doc.id,
       ...data,
+      id: doc.id,
+      fecha: data.fecha?.toDate?.() || data.fecha,
+      fechaLimite: data.fechaLimite?.toDate?.() || data.fechaLimite,
+      fechaIngreso: data.fechaIngreso?.toDate?.() || data.fechaIngreso,
       createdAt: data.createdAt?.toDate?.() || data.createdAt,
       updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
     } as T
@@ -49,8 +52,11 @@ export async function obtenerDocumento<T>(
   if (!docSnap.exists()) return null
   const data = docSnap.data() as DocumentData
   return {
-    id: docSnap.id,
     ...data,
+    id: docSnap.id,
+    fecha: data.fecha?.toDate?.() || data.fecha,
+    fechaLimite: data.fechaLimite?.toDate?.() || data.fechaLimite,
+    fechaIngreso: data.fechaIngreso?.toDate?.() || data.fechaIngreso,
     createdAt: data.createdAt?.toDate?.() || data.createdAt,
     updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
   } as T

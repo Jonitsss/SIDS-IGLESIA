@@ -22,7 +22,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await login(email, password)
+      await login(email.toLowerCase().trim(), password)
       toast.success("Inicio de sesión exitoso")
       router.push("/dashboard")
     } catch (error: any) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
+import { useAuth } from "@/contexts/AuthContext"
 import { useEventos } from "@/hooks/useEventos"
-import { Plus, ChevronLeft, ChevronRight, Trash2, CalendarDays } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, Trash2, CalendarDays, Loader2 } from "lucide-react"
 import { DIAS_SEMANA } from "@/lib/constants"
 import { crearDocumento, eliminarDocumento } from "@/lib/firestore"
 import { Evento } from "@/types"
@@ -22,7 +23,9 @@ import { es } from "date-fns/locale"
 type ViewMode = "month" | "list"
 
 export default function EventosPage() {
-  const { eventos, loading } = useEventos()
+  const { eventos, loading, refetch, setEventos } = useEventos()
+  const { userData } = useAuth()
+  const esPastor = userData?.rol === "pastor"
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [open, setOpen] = useState(false)
@@ -65,20 +68,23 @@ export default function EventosPage() {
       toast.success("Evento creado exitosamente")
       setOpen(false)
       setForm({ titulo: "", fecha: new Date(), horaInicio: "20:00", tipo: "reunion_general" })
+      refetch()
     } catch {
       toast.error("Error al crear evento")
     }
   }
 
-  const handleDelete = async (id: string, titulo: string) => {
+  const handleDelete = useCallback(async (id: string, titulo: string) => {
     if (!confirm(`¿Eliminar el evento "${titulo}"?`)) return
+    setEventos((prev) => prev.filter((e) => e.id !== id))
     try {
       await eliminarDocumento("eventos", id)
       toast.success("Evento eliminado")
     } catch {
       toast.error("Error al eliminar evento")
+      refetch()
     }
-  }
+  }, [setEventos, refetch])
 
   const tipoBadge = (tipo: string) => {
     const variants: Record<string, "default" | "secondary" | "outline" | "warning"> = {
@@ -153,7 +159,13 @@ export default function EventosPage() {
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {viewMode === "month" ? (
+          {loading && eventos.length === 0 ? (
+            <Card>
+              <CardContent className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </CardContent>
+            </Card>
+          ) : viewMode === "month" ? (
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -182,8 +194,16 @@ export default function EventosPage() {
                       >
                         <span className="text-xs font-medium">{format(d, "d")}</span>
                         {evs.map((e) => (
-                          <div key={e.id} className="text-xs bg-primary/10 text-primary rounded px-1 mt-1 truncate">
-                            {e.titulo}
+                          <div key={e.id} className="group/ev flex items-center gap-1 text-xs bg-primary/10 text-primary rounded px-1 mt-1">
+                            <span className="truncate flex-1">{e.titulo}</span>
+                            {esPastor && (
+                              <button
+                                className="shrink-0 opacity-0 group-hover/ev:opacity-100 hover:text-destructive transition-opacity"
+                                onClick={(ev) => { ev.stopPropagation(); handleDelete(e.id, e.titulo) }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -221,14 +241,16 @@ export default function EventosPage() {
                           <Badge variant={tipoBadge(e.tipo)}>
                             {e.tipo === "reunion_general" ? "Reunión" : e.tipo === "ensayo" ? "Ensayo" : e.tipo === "jovenes" ? "Jóvenes" : "Especial"}
                           </Badge>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="opacity-0 group-hover:opacity-100 text-destructive"
-                            onClick={() => handleDelete(e.id, e.titulo)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {esPastor && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive/80"
+                              onClick={() => handleDelete(e.id, e.titulo)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -244,15 +266,27 @@ export default function EventosPage() {
             <CardTitle className="text-sm">Próximos Eventos</CardTitle>
           </CardHeader>
           <CardContent>
-            {eventos.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : eventos.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No hay próximos eventos</p>
             ) : (
               <div className="space-y-2">
                 {eventos.slice(0, 5).map((e) => (
-                  <div key={e.id} className="flex items-center gap-2 text-sm">
+                  <div key={e.id} className="group flex items-center gap-2 text-sm">
                     <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="flex-1 truncate">{e.titulo}</span>
                     <span className="text-xs text-muted-foreground shrink-0">{format(e.fecha, "d MMM", { locale: es })}</span>
+                    {esPastor && (
+                      <button
+                        className="shrink-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity"
+                        onClick={() => handleDelete(e.id, e.titulo)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

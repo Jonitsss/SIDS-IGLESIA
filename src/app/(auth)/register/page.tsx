@@ -34,7 +34,7 @@ export default function RegisterPage() {
     }
     setLoading(true)
     try {
-      await register(form.email, form.password, {
+      await register(form.email.toLowerCase().trim(), form.password, {
         nombre: form.nombre,
         apellido: form.apellido,
         telefono: form.telefono,

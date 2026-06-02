@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -19,11 +20,12 @@ export default function PerfilPage() {
     nombre: userData?.nombre || "",
     apellido: userData?.apellido || "",
     telefono: userData?.telefono || "",
+    notificaciones: userData?.notificaciones ?? true,
   })
 
   const handleSave = async () => {
     try {
-      await updateUserData(form)
+      await updateUserData({ ...form, notificaciones: form.notificaciones })
       toast.success("Perfil actualizado")
       setEditing(false)
     } catch {
@@ -96,6 +98,17 @@ export default function PerfilPage() {
           <div className="space-y-2">
             <Label>Rol</Label>
             <Input value={userData?.rol || ""} disabled className="capitalize" />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <Label className="text-sm font-medium">Notificaciones</Label>
+              <p className="text-xs text-muted-foreground">Recibir alertas de nuevas asignaciones</p>
+            </div>
+            <Switch
+              checked={form.notificaciones}
+              onCheckedChange={(v) => setForm({ ...form, notificaciones: v })}
+              disabled={!editing}
+            />
           </div>
           <div className="flex justify-end gap-2">
             {editing ? (

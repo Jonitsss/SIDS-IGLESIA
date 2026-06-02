@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Church, Menu, X } from "lucide-react"
+import { Menu, X } from "lucide-react"
 import Link from "next/link"
 
 const links = [
@@ -38,10 +38,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="p-2 rounded-xl bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-colors">
-              <Church className="h-5 w-5 text-[#C9A84C]" />
-            </div>
-            <span className="font-bold text-white text-lg tracking-tight">SIDS Iglesia</span>
+            <span className="font-bold text-white text-lg tracking-tight">SIDS</span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-1">

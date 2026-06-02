@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Church, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function LoginPage() {
@@ -42,12 +42,7 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <div className="flex justify-center mb-4">
-          <div className="p-3 rounded-full bg-primary/10">
-            <Church className="h-8 w-8 text-primary" />
-          </div>
-        </div>
-        <CardTitle className="text-2xl">SIDS Iglesia</CardTitle>
+        <CardTitle className="text-2xl">SIDS</CardTitle>
         <CardDescription>Inicia sesión para continuar</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

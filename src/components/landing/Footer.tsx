@@ -1,6 +1,6 @@
 "use client"
 
-import { Church, MapPin, Clock, Mail, Video, Camera, Globe } from "lucide-react"
+import { MapPin, Clock, Mail, Video, Camera, Globe } from "lucide-react"
 import Link from "next/link"
 
 export default function Footer() {
@@ -9,11 +9,8 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 py-16 md:py-20">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="p-2 rounded-xl bg-white/10">
-                <Church className="h-5 w-5 text-[#C9A84C]" />
-              </div>
-              <span className="font-bold text-white text-lg">SIDS Iglesia</span>
+            <div className="mb-4">
+              <span className="font-bold text-white text-lg">SIDS</span>
             </div>
             <p className="text-white/40 text-sm leading-relaxed">
               Una iglesia de puertas abiertas, fundada sobre la roca, para servir, amar y llevar el mensaje de salvación.
@@ -84,7 +81,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/5 text-center text-sm text-white/30">
-          <p>© {new Date().getFullYear()} SIDS Iglesia. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} SIDS. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

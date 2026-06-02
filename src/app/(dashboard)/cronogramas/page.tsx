@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -11,7 +11,8 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 import { useEventos } from "@/hooks/useEventos"
 import { useCronogramas } from "@/hooks/useCronogramas"
-import { crearDocumento, eliminarDocumento } from "@/lib/firestore"
+import { crearDocumento, eliminarDocumento, obtenerDocumentos, where } from "@/lib/firestore"
+import { GrillaServicio, Notificacion } from "@/types"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
@@ -21,8 +22,31 @@ export default function CronogramasPage() {
   const { cronogramas, loading: loadingCrono, refetch } = useCronogramas()
   const { userData } = useAuth()
   const esPastor = userData?.rol === "pastor"
+  const puedeCrear = esPastor || userData?.rol === "lider"
   const [open, setOpen] = useState(false)
   const [selectedEventoId, setSelectedEventoId] = useState("")
+  const cleaned = useRef(false)
+
+  useEffect(() => {
+    if (!esPastor || cleaned.current || loadingEventos || loadingCrono) return
+    ;(async () => {
+      cleaned.current = true
+      const ids = cronogramas.filter((g) => !eventos.find((e) => e.id === g.eventoId)).map((g) => g.id)
+      if (ids.length === 0) return
+      for (const id of ids) {
+        const prefix = `asignacion:${id}:`
+        const notificaciones = await obtenerDocumentos<Notificacion>("notificaciones", [
+          where("referenciaId", ">=", prefix),
+          where("referenciaId", "<", prefix + "\uf8ff"),
+        ])
+        for (const notif of notificaciones) {
+          await eliminarDocumento("notificaciones", notif.id)
+        }
+        await eliminarDocumento("cronogramas", id)
+      }
+      refetch()
+    })()
+  }, [esPastor, loadingEventos, loadingCrono, cronogramas, eventos, refetch])
 
   const eventoSeleccionado = eventos.find((e) => e.id === selectedEventoId)
 
@@ -80,10 +104,14 @@ export default function CronogramasPage() {
           <h1 className="text-2xl font-bold">Cronogramas</h1>
           <p className="text-muted-foreground">Grillas de servicio para cada reunión</p>
         </div>
-        <Button onClick={() => setOpen(true)} disabled={eventos.length === 0}>
-          <CalendarDays className="h-4 w-4" />
-          Nueva Grilla
-        </Button>
+        <div className="flex gap-2">
+          {puedeCrear && (
+          <Button onClick={() => setOpen(true)} disabled={eventos.length === 0}>
+            <CalendarDays className="h-4 w-4" />
+            Nueva Grilla
+          </Button>
+          )}
+        </div>
       </div>
 
       {cronogramas.length === 0 ? (
@@ -107,9 +135,11 @@ export default function CronogramasPage() {
               <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p className="text-lg font-medium mb-1">No hay cronogramas</p>
               <p className="text-sm">Crea una grilla de servicio para una reunión</p>
+              {puedeCrear && (
               <Button variant="outline" className="mt-4" onClick={() => setOpen(true)}>
                 Crear Primera Grilla
               </Button>
+              )}
             </CardContent>
           </Card>
         )
@@ -123,7 +153,13 @@ export default function CronogramasPage() {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-base">{evento?.titulo || "Evento"}  <span className="text-xs text-muted-foreground font-normal">{evento?.tipo === "reunion_general" ? "Reunión General" : evento?.tipo === "ensayo" ? "Ensayo" : evento?.tipo === "jovenes" ? "Jóvenes" : evento?.tipo === "escuela_biblica" ? "Esc. Bíblica" : "Especial"}</span></CardTitle>
+                        <CardTitle className="text-base">
+                          {evento ? (
+                            <>{evento.titulo} <span className="text-xs text-muted-foreground font-normal">{evento.tipo === "reunion_general" ? "Reunión General" : evento.tipo === "ensayo" ? "Ensayo" : evento.tipo === "jovenes" ? "Jóvenes" : evento.tipo === "escuela_biblica" ? "Esc. Bíblica" : "Especial"}</span></>
+                          ) : (
+                            <span className="text-destructive/70">Evento eliminado</span>
+                          )}
+                        </CardTitle>
                       </div>
                       {esPastor && (
                         <Button

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +8,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Bell, Check, X, Loader2, Clock } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNotificaciones } from "@/hooks/useNotificaciones"
-import { actualizarDocumento, obtenerDocumento, crearDocumento, obtenerDocumentos, where } from "@/lib/firestore"
+import { useMinisterios } from "@/hooks/useMinisterios"
+import { actualizarDocumento, obtenerDocumento, crearDocumento, obtenerDocumentos, eliminarDocumento, where } from "@/lib/firestore"
 import { GrillaServicio, Usuario, Notificacion } from "@/types"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -16,8 +17,24 @@ import { es } from "date-fns/locale"
 
 export default function NotificacionesPage() {
   const { user, userData } = useAuth()
-  const { notificaciones, noLeidas, loading, refetch, setNotificaciones } = useNotificaciones(user?.uid)
+  const { notificaciones, noLeidas, loading, refetch, setNotificaciones } = useNotificaciones(userData?.id || user?.uid)
+  const { ministerios, loading: loadingMin } = useMinisterios()
   const [respondiendo, setRespondiendo] = useState<string | null>(null)
+  const cleaned = useRef(false)
+
+  useEffect(() => {
+    if (cleaned.current || loading || loadingMin) return
+    ;(async () => {
+      cleaned.current = true
+      const ids = new Set(ministerios.map((m) => m.id))
+      for (const n of notificaciones) {
+        if (n.tipo === "ministerio" && !ids.has(n.referenciaId)) {
+          await eliminarDocumento("notificaciones", n.id)
+          setNotificaciones((prev) => prev.filter((p) => p.id !== n.id))
+        }
+      }
+    })()
+  }, [loading, loadingMin, ministerios, notificaciones, setNotificaciones])
 
   const handleResponder = async (notifId: string, accion: "confirmado" | "rechazado") => {
     const notif = notificaciones.find((n) => n.id === notifId)

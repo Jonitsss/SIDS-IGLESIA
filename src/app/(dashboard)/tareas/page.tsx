@@ -146,6 +146,7 @@ export default function TareasPage() {
           <h1 className="text-2xl font-bold">Tareas</h1>
           <p className="text-muted-foreground">Gestiona las tareas de cada ministerio</p>
         </div>
+        {esPastor && (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -198,6 +199,7 @@ export default function TareasPage() {
             </div>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <div className="flex gap-2 flex-wrap">

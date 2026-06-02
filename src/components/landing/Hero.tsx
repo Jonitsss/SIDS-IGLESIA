@@ -28,7 +28,7 @@ export default function Hero() {
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold tracking-widest uppercase text-[#C9A84C] border border-[#C9A84C]/30 rounded-full bg-[#C9A84C]/5">
-            Bienvenido a SIDS Iglesia
+            Bienvenido a SIDS
           </span>
         </motion.div>
 

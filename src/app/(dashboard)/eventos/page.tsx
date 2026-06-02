@@ -13,8 +13,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useEventos } from "@/hooks/useEventos"
 import { Plus, ChevronLeft, ChevronRight, Trash2, CalendarDays, Loader2 } from "lucide-react"
 import { DIAS_SEMANA } from "@/lib/constants"
-import { crearDocumento, eliminarDocumento } from "@/lib/firestore"
-import { Evento } from "@/types"
+import { crearDocumento, eliminarDocumento, obtenerDocumentos, where } from "@/lib/firestore"
+import { Evento, GrillaServicio, Notificacion } from "@/types"
 import { toast } from "sonner"
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, format, isSameMonth, isSameDay } from "date-fns"
 import { es } from "date-fns/locale"
@@ -26,6 +26,8 @@ export default function EventosPage() {
   const { eventos, loading, refetch, setEventos } = useEventos()
   const { userData } = useAuth()
   const esPastor = userData?.rol === "pastor"
+  const esLider = userData?.rol === "lider"
+  const puedeCrear = esPastor || esLider
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [open, setOpen] = useState(false)
@@ -75,11 +77,23 @@ export default function EventosPage() {
   }
 
   const handleDelete = useCallback(async (id: string, titulo: string) => {
-    if (!confirm(`¿Eliminar el evento "${titulo}"?`)) return
+    if (!confirm(`¿Eliminar el evento "${titulo}"? También se eliminarán los cronogramas, asignaciones y notificaciones asociadas.`)) return
     setEventos((prev) => prev.filter((e) => e.id !== id))
     try {
+      const cronogramas = await obtenerDocumentos<GrillaServicio>("cronogramas", [where("eventoId", "==", id)])
+      for (const cronograma of cronogramas) {
+        const prefix = `asignacion:${cronograma.id}:`
+        const notificaciones = await obtenerDocumentos<Notificacion>("notificaciones", [
+          where("referenciaId", ">=", prefix),
+          where("referenciaId", "<", prefix + "\uf8ff"),
+        ])
+        for (const notif of notificaciones) {
+          await eliminarDocumento("notificaciones", notif.id)
+        }
+        await eliminarDocumento("cronogramas", cronograma.id)
+      }
       await eliminarDocumento("eventos", id)
-      toast.success("Evento eliminado")
+      toast.success("Evento y dependencias eliminados")
     } catch {
       toast.error("Error al eliminar evento")
       refetch()
@@ -113,6 +127,7 @@ export default function EventosPage() {
               <SelectItem value="list">Lista</SelectItem>
             </SelectContent>
           </Select>
+          {puedeCrear && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -154,6 +169,7 @@ export default function EventosPage() {
               </div>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 

@@ -105,7 +105,7 @@ export interface Notificacion {
   titulo: string
   mensaje: string
   leido: boolean
-  tipo: "asignacion" | "tarea" | "evento" | "confirmacion"
+  tipo: "asignacion" | "tarea" | "evento" | "confirmacion" | "ministerio"
   referenciaId: string
   createdAt: Date
 }

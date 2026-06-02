@@ -107,7 +107,7 @@ export default function AsistenciaPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between flex-wrap gap-2">
                   <div>
-                    <CardTitle className="text-base">{evento?.titulo || "Sin evento"}</CardTitle>
+                    <CardTitle className="text-base">{evento ? evento.titulo : <span className="text-muted-foreground/50">Evento eliminado</span>}</CardTitle>
                     <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                       <CalendarDays className="h-3.5 w-3.5" />
                       {format(g.fecha, "EEEE d MMMM yyyy", { locale: es })}

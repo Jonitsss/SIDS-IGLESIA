@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, CheckSquare, Users, AlertCircle, Church } from "lucide-react"
+import { Calendar, CheckSquare, Users, AlertCircle, Building2 } from "lucide-react"
 
 export default function DashboardPage() {
   const { userData } = useAuth()
@@ -95,13 +95,13 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Church className="h-5 w-5" />
+              <Building2 className="h-5 w-5" />
               Estado General de Ministerios
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-muted-foreground">
-              <Church className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <Building2 className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p>No hay ministerios configurados</p>
               <p className="text-sm">Creá ministerios desde la sección Ministerios</p>
             </div>

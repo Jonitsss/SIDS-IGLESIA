@@ -11,7 +11,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
         <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur-xl">
           <div className="flex items-center gap-2 p-3">
             <Button

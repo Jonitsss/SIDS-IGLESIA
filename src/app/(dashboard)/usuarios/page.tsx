@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Plus, Trash2, Loader2, Pencil } from "lucide-react"
-import { Usuario, Rol } from "@/types"
+import { Usuario, Rol, Notificacion } from "@/types"
 import { obtenerDocumentos, eliminarDocumento, crearDocumento, actualizarDocumento } from "@/lib/firestore"
 import { useAuth } from "@/contexts/AuthContext"
 import { useMinisterios } from "@/hooks/useMinisterios"
@@ -108,6 +108,10 @@ export default function UsuariosPage() {
   const handleEditSave = async () => {
     if (!editId || !form.nombre) return
     try {
+      const oldUser = usuarios.find((u) => u.id === editId)
+      const oldIds = oldUser?.ministerioIds || []
+      const newIds = form.ministerioIds.filter((id) => !oldIds.includes(id))
+
       await actualizarDocumento("usuarios", editId, {
         nombre: form.nombre,
         apellido: form.apellido,
@@ -117,6 +121,21 @@ export default function UsuariosPage() {
         ministerioIds: form.ministerioIds,
         notificaciones: form.notificaciones,
       })
+
+      for (const mid of newIds) {
+        const min = ministerios.find((m) => m.id === mid)
+        if (min) {
+          await crearDocumento<Notificacion>("notificaciones", {
+            usuarioId: (oldUser as any)?.authUid || editId,
+            titulo: "Nuevo ministerio",
+            mensaje: `Has sido asignado al ministerio "${min.nombre}"`,
+            leido: false,
+            tipo: "ministerio",
+            referenciaId: mid,
+          })
+        }
+      }
+
       toast.success("Usuario actualizado")
       setEditOpen(false)
       setEditId(null)

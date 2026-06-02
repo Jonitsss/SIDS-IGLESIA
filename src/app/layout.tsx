@@ -3,7 +3,7 @@ import "./globals.css"
 import { Providers } from "./providers"
 
 export const metadata: Metadata = {
-  title: "SIDS Iglesia | Una familia con propósito",
+  title: "SIDS | Una familia con propósito",
   description: "Te esperamos con las puertas abiertas. Jueves 20hs, Sábado 19hs, Domingo 18hs.",
 }
 
@@ -25,7 +25,7 @@ export default function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('theme');
-                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   }
                 } catch(e) {}

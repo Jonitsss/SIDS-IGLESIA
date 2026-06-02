@@ -1,4 +1,4 @@
-# SIDS Iglesia - Sistema de Gestión Ministerial
+# SIDS - Sistema de Gestión Ministerial
 
 Plataforma moderna para la gestión interna de colaboradores de una iglesia. Permite organizar ministerios, colaboradores, cronogramas de servicios, asignación de tareas y control de asistencia.
 
@@ -8,7 +8,7 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 
 ### Landing Page
 - Página pública con información de la iglesia: presentación de la pastora, el obispo, sección de músicos con horarios, mapa de ubicación y footer con redes sociales
-- Modo oscuro/claro con switch de tema
+- Modo claro por defecto con switch a modo oscuro
 - Diseño responsive con animaciones suaves (framer-motion)
 - Sin enlaces de acceso visibles — solo `/login` por URL directa
 
@@ -20,12 +20,15 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 
 ### Dashboard Protegido
 - Panel principal según el rol del usuario
-- Sidebar responsiva con navegación filtrada por permisos
+- Sidebar fija anclada a la izquierda, solo el contenido derecho scrollea
+- Badge rojo con contador de notificaciones no leídas en el sidebar
 - Perfil de usuario editable (nombre, teléfono, preferencia de notificaciones)
 
 ### Gestión de Ministerios
-- CRUD completo de ministerios con roles personalizados
+- CRUD completo de ministerios con roles personalizados (solo pastor crea/elimina)
 - Asignación de líderes y colaboradores a ministerios
+- Notificación automática al ser asignado a un ministerio
+- Eliminación en cascada: borrar un ministerio elimina sus notificaciones y referencias
 - Solo el pastor puede eliminar ministerios
 
 ### Eventos
@@ -39,6 +42,7 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 - Asignación de colaboradores con estados: **Pendiente → Confirmado → Rechazado**
 - Filtro por ministerio
 - Notificaciones automáticas al asignar un colaborador
+- Eliminación en cascada: borrar un evento elimina sus cronogramas y notificaciones
 - El pastor puede eliminar cronogramas
 
 ### Tareas
@@ -46,6 +50,7 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 - Asignación de responsables con ministerio y evento asociado
 - Estados: pendiente, en progreso, completada
 - Notificaciones automáticas al asignar una tarea
+- Solo el pastor puede crear y eliminar tareas
 
 ### Asistencia
 - Panel del pastor con estados de confirmación de las grillas
@@ -116,11 +121,11 @@ sids-iglesia/
 
 ## Roles y Permisos
 
-| Rol | Acceso |
-|---|---|
-| **Pastor** | Acceso total: CRUD usuarios, ministerios, eventos, cronogramas, tareas. Panel de asistencia y confirmaciones. |
-| **Líder** | Visualiza y edita ministerios, eventos, cronogramas, tareas. NO puede eliminar. |
-| **Colaborador** | Visualiza asignaciones y cronogramas. Confirma/rechaza desde notificaciones. Edita su perfil. |
+| Rol | Crear | Eliminar | Acceso |
+|---|---|---|---|
+| **Pastor** | ✅ Todo | ✅ Todo | Acceso total al sistema |
+| **Líder** | ✅ Eventos, Cronogramas | ❌ | Visualiza todo. Crea eventos y grillas. Ve asistencia. |
+| **Colaborador** | ❌ | ❌ | Solo visualiza asignaciones, tareas, eventos. Confirma/rechaza desde notificaciones. Edita su perfil. |
 
 ## Requisitos
 

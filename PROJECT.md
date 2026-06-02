@@ -1,4 +1,4 @@
-# SIDS Iglesia - Sistema de Gestión Ministerial
+# SIDS - Sistema de Gestión Ministerial
 
 Plataforma moderna para la gestión interna de colaboradores de una iglesia. Permite organizar ministerios, colaboradores, cronogramas de servicios, asignación de tareas y control de asistencia.
 
@@ -145,14 +145,16 @@ sids-iglesia/
 
 ### Líder de Ministerio
 - Ver ministerios, eventos, cronogramas, tareas
-- NO puede eliminar ministerios, eventos, cronogramas (solo pastor)
+- **Crear eventos y grillas de servicio**
+- NO puede eliminar (solo pastor)
 - Ver panel de asistencia
 - Gestionar sus notificaciones
 
 ### Colaborador
-- Ver sus asignaciones y cronogramas
+- Solo visualiza: asignaciones, tareas, eventos
+- **No puede crear ni eliminar nada**
 - Confirmar/rechazar asignaciones desde /notificaciones
-- Ver eventos y tareas asignadas
+- Recibe notificaciones al ser asignado a un ministerio
 - Actualizar sus datos personales y preferencia de notificaciones
 
 ---
@@ -315,7 +317,9 @@ npm run dev
 - [x] Switch día/noche con ThemeContext
 - [x] Autenticación con Firebase Auth (Email/Password)
 - [x] Roles: Pastor, Líder, Colaborador
-- [x] Sidebar responsiva con menú por rol
+- [x] Sidebar fija anclada a la izquierda con scroll interno del nav
+- [x] Badge de notificaciones no leídas en el sidebar
+- [x] Modo claro como tema por defecto
 - [x] Gestión de ministerios con roles personalizados
 - [x] Calendario de eventos (vista mes + lista)
 - [x] Cronogramas/grillas con asignación por ministerio y rol
@@ -325,7 +329,10 @@ npm run dev
 - [x] Panel de Pastor en /asistencia con estados de confirmación
 - [x] Pre-perfiles de usuario con vinculación al registrarse
 - [x] Normalización de emails (case-insensitive)
-- [x] Permisos por rol (solo pastor elimina)
+- [x] Permisos por rol: líder crea eventos/grillas, colaborador solo visualiza
+- [x] Notificación automática al ser asignado a un ministerio
+- [x] Eliminación en cascada: evento → cronogramas → notificaciones
+- [x] Eliminación en cascada: ministerio → notificaciones → referencias en usuarios
 - [x] Perfil de usuario con toggle de notificaciones
 - [x] Diseño responsive (mobile-first)
 

@@ -18,7 +18,7 @@ export default function Welcome() {
             <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-gray-100">
               <img
                 src="/Pastor.jpg"
-                alt="SIDS Iglesia"
+                alt="SIDS"
                 className="w-full h-full object-cover"
               />
             </div>

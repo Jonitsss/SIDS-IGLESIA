@@ -1,5 +1,5 @@
 import {
-  Church,
+  Building2,
   Music,
   Volume2,
   Monitor,
@@ -13,7 +13,7 @@ export const MINISTERIOS_PREDETERMINADOS = [
     descripcion: "Limpieza del templo, orden, recepción y apoyo logístico",
     roles: ["Recepción", "Limpieza", "Apoyo Logístico"],
     color: "#3B82F6",
-    icono: "Church",
+    icono: "Building2",
   },
   {
     nombre: "Músicos",
@@ -72,7 +72,7 @@ export const DIAS_SEMANA = [
 ]
 
 export const MAPA_ICONOS: Record<string, React.ComponentType> = {
-  Church,
+  Building2,
   Music,
   Volume2,
   Monitor,

@@ -399,6 +399,8 @@ npm run dev
 - `register` busca un pre-perfil con email case-insensitive; si existe lo vincula seteando `authUid`, si no crea un doc nuevo en `usuarios/{uid}`.
 - `updateUserData` usa el mismo patrón de búsqueda por uid → authUid.
 - Login y register redirigen al dashboard si el usuario ya tiene sesión activa (evita doble login en pestaña nueva)
+- Inputs de login/register tienen `name` + `autoComplete` para que el navegador guarde las credenciales
+- Password inputs tienen toggle show/hide (Eye/EyeOff) para evitar errores al escribir
 
 ### Avatar en Sidebar y listas
 - El footer del sidebar y la lista de `/usuarios` muestran el avatar con `<AvatarImage>` (foto si existe, iniciales como fallback)

@@ -336,7 +336,7 @@ npm run dev
 - [x] Perfil de usuario con toggle de notificaciones y subida de foto (base64 + canvas compression en Firestore, sin Storage)
 - [x] Hover effects consistentes: logo, icono usuario, nombre y rol heredan colores de hover como los items del menú
 - [x] Login/register redirigen al dashboard si ya hay sesión activa
-- [x] Zoom deshabilitado en mobile (viewport user-scalable=no)
+- [x] Zoom deshabilitado en mobile (viewport user-scalable=no + touch-action + text-base en inputs auth)
 - [x] object-cover en avatares para evitar distorsión de imagen
 - [x] Diseño responsive (mobile-first)
 
@@ -389,10 +389,16 @@ npm run dev
 - El helper `actualizarDocumento` usa `updateDoc` con `{merge: true}` a nivel de Firestore
 - Los IDs de documento siempre toman precedencia sobre campos `id` almacenados en el documento
 
+### Zoom deshabilitado en mobile
+- Meta viewport `user-scalable=no` + `maximum-scale=1.0` en layout.tsx
+- `body { touch-action: pan-x pan-y; }` en globals.css para bloquear pinch-to-zoom
+- Todos los `<Input>` en login/register tienen `text-base` (16px) para evitar auto-zoom de Safari al enfocar
+
 ### Autenticación (AuthContext)
 - `fetchUserData` busca el documento del usuario en este orden: (1) `doc(db, "usuarios", uid)`, (2) `where("authUid")`, (3) `where("email")`. Si el email existe, lo vincula automáticamente.
 - `register` busca un pre-perfil con email case-insensitive; si existe lo vincula seteando `authUid`, si no crea un doc nuevo en `usuarios/{uid}`.
 - `updateUserData` usa el mismo patrón de búsqueda por uid → authUid.
+- Login y register redirigen al dashboard si el usuario ya tiene sesión activa (evita doble login en pestaña nueva)
 
 ### Avatar en Sidebar y listas
 - El footer del sidebar y la lista de `/usuarios` muestran el avatar con `<AvatarImage>` (foto si existe, iniciales como fallback)

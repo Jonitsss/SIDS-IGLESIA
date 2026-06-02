@@ -1,6 +1,7 @@
 Lee primero PROJECT.md para entender el proyecto completo.
 
 ## Reglas
+- **Antes de commitear, verificar si README.md o PROJECT.md necesitan actualizarse con los cambios realizados. Si no hay cambios relevantes para docs, omitir.**
 - Usar siempre TypeScript estricto
 - Componentes "use client" cuando usen hooks o interactividad
 - Preferir shadcn/ui components sobre HTML nativo

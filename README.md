@@ -18,6 +18,7 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 - Vinculación automática de pre-perfiles al registrarse
 - Roles: **Pastor**, **Líder de Ministerio**, **Colaborador**
 - Las páginas de login y register redirigen automáticamente al dashboard si ya hay sesión activa
+- Zoom deshabilitado en mobile: inputs con text-base (16px) evitan auto-zoom de Safari, touch-action bloquea pinch-to-zoom
 
 ### Dashboard Protegido
 - Panel principal según el rol del usuario

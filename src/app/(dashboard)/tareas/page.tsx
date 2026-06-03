@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, CheckCircle2, Circle, Loader2, Trash2 } from "lucide-react"
+import { CardGridSkeleton } from "@/components/skeletons"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 import { useTareas } from "@/hooks/useTareas"
@@ -211,11 +212,7 @@ export default function TareasPage() {
       </div>
 
       {loading ? (
-        <Card>
-          <CardContent className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <CardGridSkeleton cols={3} count={6} />
       ) : tareas.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
@@ -246,7 +243,7 @@ export default function TareasPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="shrink-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 h-6 w-6"
+                        className="shrink-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 hover:bg-transparent h-6 w-6"
                         onClick={() => handleDelete(tarea.id, tarea.titulo)}
                       >
                         <Trash2 className="h-3 w-3" />

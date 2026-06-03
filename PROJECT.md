@@ -82,16 +82,17 @@ sids-iglesia/
 │   │   ├── providers.tsx       # Providers globales
 │   │   └── page.tsx            # Landing page completa
 │   ├── components/
-│   │   ├── ui/                 # shadcn/ui (Button, Card, Input, Switch, etc.)
+│   │   ├── ui/                 # shadcn/ui (Button, Card, Input, Switch, Skeleton, etc.)
 │   │   ├── layout/             # Sidebar (menú por rol), DashboardLayout
-│   │   └── auth/               # ProtectedRoute, RoleGuard
+│   │   ├── auth/               # ProtectedRoute, RoleGuard
+│   │   └── skeletons.tsx       # Skeleton loaders (CardGrid, List, Calendar, Cronograma, Asistencia)
 │   ├── contexts/
 │   │   ├── AuthContext.tsx      # Firebase Auth + fetchUserData con authUid fallback
 │   │   └── ThemeContext.tsx     # Dark/Light mode toggle
 │   ├── hooks/
 │   │   ├── useEventos.ts       # Fetch + mounted guard + refreshKey
-│   │   ├── useCronogramas.ts
-│   │   ├── useMinisterios.ts
+│   │   ├── useCronogramas.ts   # onSnapshot real-time + parseDoc
+│   │   ├── useMinisterios.ts   # onSnapshot real-time + parseDoc
 │   │   ├── useTareas.ts        # Ordenamiento en memoria
 │   │   └── useNotificaciones.ts# Query por usuarioId, ordenamiento en memoria
 │   ├── lib/
@@ -339,6 +340,11 @@ npm run dev
 - [x] Zoom deshabilitado en mobile (viewport user-scalable=no + touch-action + text-base en inputs auth)
 - [x] object-cover en avatares para evitar distorsión de imagen
 - [x] Diseño responsive (mobile-first)
+- [x] Skeleton screens animados en todas las páginas del dashboard
+- [x] Optimistic UI en creación y eliminación (respuesta instantánea, Firestore en background)
+- [x] Ministerio y cronogramas con onSnapshot (tiempo real, sin refetch manual)
+- [x] Notificaciones con fecha del evento y eliminación individual/masiva
+- [x] Hover de botones de eliminar sin fondo (hover:bg-transparent)
 
 ---
 

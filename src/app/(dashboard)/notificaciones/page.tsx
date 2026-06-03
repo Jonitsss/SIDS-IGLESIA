@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Bell, Check, X, Loader2, Clock } from "lucide-react"
+import { Bell, Check, X, Loader2, Clock, Trash2 } from "lucide-react"
+import { ListSkeleton } from "@/components/skeletons"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNotificaciones } from "@/hooks/useNotificaciones"
 import { useMinisterios } from "@/hooks/useMinisterios"
 import { actualizarDocumento, obtenerDocumento, crearDocumento, obtenerDocumentos, eliminarDocumento, where } from "@/lib/firestore"
-import { GrillaServicio, Usuario, Notificacion } from "@/types"
+import { GrillaServicio, Usuario, Notificacion, Evento } from "@/types"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -20,7 +21,38 @@ export default function NotificacionesPage() {
   const { notificaciones, noLeidas, loading, refetch, setNotificaciones } = useNotificaciones(user?.uid || userData?.id)
   const { ministerios, loading: loadingMin } = useMinisterios()
   const [respondiendo, setRespondiendo] = useState<string | null>(null)
+  const [fechasGrilla, setFechasGrilla] = useState<Record<string, string>>({})
+  const [eventosGrilla, setEventosGrilla] = useState<Record<string, string>>({})
   const cleaned = useRef(false)
+
+  useEffect(() => {
+    const gridIds = new Set<string>()
+    notificaciones.forEach((n) => {
+      if (n.referenciaId?.startsWith("asignacion:")) {
+        const parts = n.referenciaId.split(":")
+        if (parts.length >= 2) gridIds.add(parts[1])
+      }
+    })
+    if (gridIds.size === 0) return
+    ;(async () => {
+      const fechas: Record<string, string> = {}
+      const eventos: Record<string, string> = {}
+      await Promise.all(
+        [...gridIds].map(async (id) => {
+          const grilla = await obtenerDocumento<GrillaServicio>("cronogramas", id)
+          if (grilla) {
+            if (grilla.fecha) fechas[id] = format(new Date(grilla.fecha), "d 'de' MMMM", { locale: es })
+            if (grilla.eventoId) {
+              const evento = await obtenerDocumento<Evento>("eventos", grilla.eventoId)
+              if (evento?.titulo) eventos[id] = evento.titulo
+            }
+          }
+        })
+      )
+      setFechasGrilla((prev) => ({ ...prev, ...fechas }))
+      setEventosGrilla((prev) => ({ ...prev, ...eventos }))
+    })()
+  }, [notificaciones])
 
   useEffect(() => {
     if (cleaned.current || loading || loadingMin) return
@@ -49,6 +81,7 @@ export default function NotificacionesPage() {
 
       const grilla = await obtenerDocumento<GrillaServicio>("cronogramas", grillaId)
       if (!grilla) { toast.error("La grilla ya no existe"); return }
+      const fechaStr = format(new Date(grilla.fecha), "d 'de' MMMM", { locale: es })
 
       const nuevas = grilla.asignaciones.map((a) =>
         a.ministerioId === ministerioId && a.rol === rol
@@ -68,6 +101,10 @@ export default function NotificacionesPage() {
         )
       )
 
+      const ministerioNombre = ministerios.find((m) => m.id === ministerioId)?.nombre || ""
+      const eventoDoc = await obtenerDocumento<Evento>("eventos", grilla.eventoId)
+      const eventoTitulo = eventoDoc?.titulo || ""
+
       const pastores = await obtenerDocumentos<Usuario>("usuarios", [
         where("rol", "==", "pastor"),
       ])
@@ -78,7 +115,7 @@ export default function NotificacionesPage() {
         await crearDocumento("notificaciones", {
           usuarioId: destId,
           titulo: accion === "confirmado" ? "Asignación confirmada" : "Asignación rechazada",
-          mensaje: `${pal} ${accion === "confirmado" ? "confirmó" : "rechazó"}: ${notif.mensaje}`,
+          mensaje: `Se ${accion === "confirmado" ? "confirmó" : "rechazó"} la asignación de ${pal} como "${rol}" en ${ministerioNombre} para "${eventoTitulo}" del ${fechaStr}.`,
           leido: false,
           tipo: "confirmacion",
           referenciaId: notif.referenciaId,
@@ -104,6 +141,31 @@ export default function NotificacionesPage() {
     }
   }
 
+  const handleEliminarNotificacion = async (notifId: string) => {
+    const eliminada = notificaciones.find((n) => n.id === notifId)
+    setNotificaciones((prev) => prev.filter((n) => n.id !== notifId))
+    try {
+      await eliminarDocumento("notificaciones", notifId)
+    } catch {
+      if (eliminada) setNotificaciones((prev) => [...prev, eliminada])
+      toast.error("Error al eliminar notificación")
+    }
+  }
+
+  const handleEliminarLeidas = async () => {
+    const anterior = notificaciones
+    const ids = anterior.filter((n) => n.leido).map((n) => n.id)
+    if (ids.length === 0) return
+    setNotificaciones((prev) => prev.filter((n) => !n.leido))
+    try {
+      await Promise.all(ids.map((id) => eliminarDocumento("notificaciones", id)))
+      toast.success(`${ids.length} notificación${ids.length > 1 ? "es" : ""} eliminada${ids.length > 1 ? "s" : ""}`)
+    } catch {
+      setNotificaciones(anterior)
+      toast.error("Error al eliminar notificaciones")
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -115,14 +177,16 @@ export default function NotificacionesPage() {
               : "No tenés notificaciones pendientes"}
           </p>
         </div>
+        {notificaciones.some((n) => n.leido) && (
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleEliminarLeidas}>
+            <Trash2 className="h-4 w-4" />
+            Eliminar leídas
+          </Button>
+        )}
       </div>
 
       {loading ? (
-        <Card>
-          <CardContent className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <ListSkeleton count={5} />
       ) : notificaciones.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
@@ -144,7 +208,22 @@ export default function NotificacionesPage() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{n.titulo}</p>
-                    <p className="text-sm text-muted-foreground">{n.mensaje}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(() => {
+                        if (n.mensaje.startsWith("Se confirmó") || n.mensaje.startsWith("Se rechazó")) return n.mensaje
+                        if (!n.referenciaId?.startsWith("asignacion:")) return n.mensaje
+                        const p = n.referenciaId.split(":")
+                        const gridId = p[1], ministerioId = p[2], rol = p[3]
+                        const fecha = fechasGrilla[gridId]
+                        const evento = eventosGrilla[gridId]
+                        if (!fecha || !evento || !rol) return n.mensaje
+                        const ministerioNombre = ministerios.find((m) => m.id === ministerioId)?.nombre || ""
+                        const match = n.mensaje.match(/^(.+?)\s+(confirmó|rechazó):/)
+                        if (!match) return n.mensaje
+                        const accion = match[2] === "confirmó" ? "confirmó" : "rechazó"
+                        return `Se ${accion} la asignación de ${match[1]} como "${rol}" en ${ministerioNombre} para "${evento}" del ${fecha}.`
+                      })()}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {n.createdAt ? format(new Date(n.createdAt), "d MMM HH:mm", { locale: es }) : ""}
                     </p>
@@ -174,7 +253,17 @@ export default function NotificacionesPage() {
                         </>
                       )}
                       {n.leido ? (
-                        <Badge variant="outline" className="text-xs">Leída</Badge>
+                        <>
+                          <Badge variant="outline" className="text-xs">Leída</Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-transparent"
+                            onClick={() => handleEliminarNotificacion(n.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </>
                       ) : n.tipo !== "asignacion" ? (
                         <Button
                           size="sm"

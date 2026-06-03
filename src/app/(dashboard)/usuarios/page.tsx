@@ -325,7 +325,7 @@ export default function UsuariosPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-destructive hover:text-destructive/80"
+                          className="text-destructive hover:text-destructive/80 hover:bg-transparent"
                           onClick={() => handleDelete(u.id, `${u.nombre} ${u.apellido}`)}
                         >
                           <Trash2 className="h-4 w-4" />

@@ -173,7 +173,7 @@ export default function MinisterioDetailPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive/80 h-7 w-7"
+                        className="text-destructive hover:text-destructive/80 hover:bg-transparent h-7 w-7"
                         onClick={() => handleRemoveRol(rol)}
                       >
                         <Trash2 className="h-3 w-3" />

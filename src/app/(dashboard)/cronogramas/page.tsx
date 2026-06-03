@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { CalendarDays, Plus, Loader2, Trash2 } from "lucide-react"
+import { CronogramaSkeleton } from "@/components/skeletons"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 import { useEventos } from "@/hooks/useEventos"
@@ -19,12 +20,13 @@ import Link from "next/link"
 
 export default function CronogramasPage() {
   const { eventos, loading: loadingEventos } = useEventos()
-  const { cronogramas, loading: loadingCrono, refetch } = useCronogramas()
+  const { cronogramas, loading: loadingCrono, setCronogramas } = useCronogramas()
   const { userData } = useAuth()
   const esPastor = userData?.rol === "pastor"
   const puedeCrear = esPastor || userData?.rol === "lider"
   const [open, setOpen] = useState(false)
   const [selectedEventoId, setSelectedEventoId] = useState("")
+  const [creating, setCreating] = useState(false)
   const cleaned = useRef(false)
 
   useEffect(() => {
@@ -44,14 +46,16 @@ export default function CronogramasPage() {
         }
         await eliminarDocumento("cronogramas", id)
       }
-      refetch()
     })()
-  }, [esPastor, loadingEventos, loadingCrono, cronogramas, eventos, refetch])
+  }, [esPastor, loadingEventos, loadingCrono, cronogramas, eventos])
 
   const eventoSeleccionado = eventos.find((e) => e.id === selectedEventoId)
 
   const handleCreate = async () => {
-    if (!selectedEventoId) return
+    if (!selectedEventoId || creating) return
+    setCreating(true)
+    setOpen(false)
+    setSelectedEventoId("")
     try {
       await crearDocumento("cronogramas", {
         eventoId: selectedEventoId,
@@ -59,22 +63,21 @@ export default function CronogramasPage() {
         asignaciones: [],
         notas: "",
       })
-      toast.success("Grilla creada exitosamente")
-      setOpen(false)
-      setSelectedEventoId("")
-      refetch()
     } catch {
       toast.error("Error al crear grilla")
+    } finally {
+      setCreating(false)
     }
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Eliminar esta grilla?")) return
+    const anterior = cronogramas
+    setCronogramas((prev) => prev.filter((g) => g.id !== id))
     try {
       await eliminarDocumento("cronogramas", id)
-      toast.success("Grilla eliminada")
-      refetch()
     } catch {
+      setCronogramas(anterior)
       toast.error("Error al eliminar grilla")
     }
   }
@@ -88,11 +91,7 @@ export default function CronogramasPage() {
             <p className="text-muted-foreground">Grillas de servicio para cada reunión</p>
           </div>
         </div>
-        <Card>
-          <CardContent className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <CronogramaSkeleton />
       </div>
     )
   }
@@ -165,7 +164,7 @@ export default function CronogramasPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-destructive hover:text-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-destructive hover:text-destructive/80 hover:bg-transparent opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(ev) => { ev.preventDefault(); handleDelete(g.id) }}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -212,7 +211,8 @@ export default function CronogramasPage() {
               </Select>
             </div>
             <p className="text-sm text-muted-foreground">La configuración de roles se hará desde cada ministerio.</p>
-            <Button className="w-full" onClick={handleCreate} disabled={!selectedEventoId}>
+            <Button className="w-full" onClick={handleCreate} disabled={!selectedEventoId || creating}>
+              {creating && <Loader2 className="h-4 w-4 animate-spin" />}
               Crear Grilla
             </Button>
           </div>

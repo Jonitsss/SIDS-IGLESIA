@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useMinisterios } from "@/hooks/useMinisterios"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardGridSkeleton } from "@/components/skeletons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,11 +20,12 @@ import Link from "next/link"
 const iconos: Record<string, any> = { Building2, Music, Volume2, Monitor, BookOpen }
 
 export default function MinisteriosPage() {
-  const { ministerios, loading, refetch } = useMinisterios()
+  const { ministerios, loading, setMinisterios } = useMinisterios()
   const { userData } = useAuth()
   const esPastor = userData?.rol === "pastor"
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ nombre: "", descripcion: "" })
+  const [creating, setCreating] = useState(false)
   const cleaned = useRef(false)
 
   useEffect(() => {
@@ -42,7 +44,25 @@ export default function MinisteriosPage() {
   }, [esPastor, loading, ministerios])
 
   const handleCreate = async () => {
-    if (!form.nombre) return
+    if (!form.nombre || creating) return
+    setCreating(true)
+
+    const tempId = `temp_${Date.now()}`
+    const optimistic: Ministerio = {
+      id: tempId,
+      nombre: form.nombre,
+      descripcion: form.descripcion,
+      roles: [],
+      liderId: "",
+      color: "#73A243",
+      icono: "Building2",
+      activo: true,
+      createdAt: new Date(),
+    }
+    setMinisterios((prev) => [optimistic, ...prev])
+    setOpen(false)
+    setForm({ nombre: "", descripcion: "" })
+
     try {
       await crearDocumento<Ministerio>("ministerios", {
         nombre: form.nombre,
@@ -54,39 +74,40 @@ export default function MinisteriosPage() {
         activo: true,
       })
       toast.success("Ministerio creado exitosamente")
-      setOpen(false)
-      setForm({ nombre: "", descripcion: "" })
-      refetch()
     } catch {
+      setMinisterios((prev) => prev.filter((m) => m.id !== tempId))
       toast.error("Error al crear ministerio")
+    } finally {
+      setCreating(false)
     }
   }
 
   const handleDelete = async (id: string, nombre: string) => {
     if (!confirm(`¿Eliminar el ministerio "${nombre}"? Se eliminarán las notificaciones y referencias asociadas.`)) return
+    const anterior = ministerios
+    setMinisterios((prev) => prev.filter((m) => m.id !== id))
     try {
       const notificaciones = await obtenerDocumentos<Notificacion>("notificaciones", [
         where("tipo", "==", "ministerio"),
         where("referenciaId", "==", id),
       ])
-      for (const n of notificaciones) {
-        await eliminarDocumento("notificaciones", n.id)
-      }
+      await Promise.all(notificaciones.map((n) => eliminarDocumento("notificaciones", n.id)))
 
       const usuarios = await obtenerDocumentos<Usuario>("usuarios", [
         where("ministerioIds", "array-contains", id),
       ])
-      for (const u of usuarios) {
-        const nuevosIds = (u.ministerioIds || []).filter((mid) => mid !== id)
-        if (nuevosIds.length !== (u.ministerioIds || []).length) {
-          await actualizarDocumento("usuarios", u.id, { ministerioIds: nuevosIds })
-        }
-      }
+      await Promise.all(
+        usuarios.map((u) => {
+          const nuevosIds = (u.ministerioIds || []).filter((mid) => mid !== id)
+          if (nuevosIds.length !== (u.ministerioIds || []).length) {
+            return actualizarDocumento("usuarios", u.id, { ministerioIds: nuevosIds })
+          }
+        })
+      )
 
       await eliminarDocumento("ministerios", id)
-      toast.success("Ministerio y dependencias eliminados")
-      refetch()
     } catch {
+      setMinisterios(anterior)
       toast.error("Error al eliminar ministerio")
     }
   }
@@ -119,7 +140,10 @@ export default function MinisteriosPage() {
                 <Label>Descripción</Label>
                 <Input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder="Descripción breve" />
               </div>
-              <Button onClick={handleCreate} className="w-full">Crear</Button>
+              <Button onClick={handleCreate} className="w-full" disabled={creating}>
+                {creating && <Loader2 className="h-4 w-4 animate-spin" />}
+                Crear
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -127,11 +151,7 @@ export default function MinisteriosPage() {
       </div>
 
       {loading ? (
-        <Card>
-          <CardContent className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <CardGridSkeleton cols={3} count={6} />
       ) : ministerios.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
@@ -160,7 +180,7 @@ export default function MinisteriosPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80"
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80 hover:bg-transparent"
                       onClick={() => handleDelete(m.id, m.nombre)}
                     >
                       <Trash2 className="h-4 w-4" />

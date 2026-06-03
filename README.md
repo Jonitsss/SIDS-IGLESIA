@@ -64,7 +64,8 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 ### Notificaciones
 - Bandeja de notificaciones con acción de **Aceptar/Rechazar** asignaciones
 - Notificación al pastor cuando un colaborador confirma o rechaza
-- Marcado de lectura
+- Marcado de lectura y eliminación individual o masiva de leídas
+- Fecha del evento incluida en el mensaje de la notificación
 
 ### Usuarios
 - CRUD exclusivo del pastor
@@ -89,6 +90,12 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 | **sonner** | Toast notifications |
 | **lucide-react** | Iconos dashboard |
 | **Font Awesome 4.7** | Iconos sociales landing page |
+
+## Optimizaciones de UX
+
+- **Optimistic UI**: las operaciones de crear y eliminar actualizan la interfaz al instante, sin esperar la respuesta del servidor. Firestore opera en background y se revierte automáticamente si falla.
+- **Tiempo real**: las listas de ministerios y cronogramas usan `onSnapshot` de Firestore, eliminando la necesidad de recargas manuales.
+- **Skeleton screens**: todas las páginas del dashboard muestran skeletons animados mientras cargan los datos, reemplazando los spinners genéricos.
 
 ## Estructura del Proyecto
 

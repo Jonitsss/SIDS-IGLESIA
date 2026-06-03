@@ -299,7 +299,7 @@ export default function CronogramaDetailPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-destructive hover:text-destructive/80 shrink-0"
+                                className="h-7 w-7 text-destructive hover:text-destructive/80 hover:bg-transparent shrink-0"
                                 onClick={() => handleRemove(min.id, rol)}
                               >
                                 <Trash2 className="h-3 w-3" />

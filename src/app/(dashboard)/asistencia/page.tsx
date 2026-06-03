@@ -3,7 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Loader2, CalendarDays, CheckCircle2, XCircle, Clock, Users } from "lucide-react"
+import { CalendarDays, CheckCircle2, XCircle, Clock, Users } from "lucide-react"
+import { AsistenciaSkeleton } from "@/components/skeletons"
 import { useCronogramas } from "@/hooks/useCronogramas"
 import { useEventos } from "@/hooks/useEventos"
 import { useMinisterios } from "@/hooks/useMinisterios"
@@ -57,11 +58,7 @@ export default function AsistenciaPage() {
             <p className="text-muted-foreground">Panel de confirmaciones del Pastor</p>
           </div>
         </div>
-        <Card>
-          <CardContent className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <AsistenciaSkeleton />
       </div>
     )
   }

@@ -12,6 +12,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { useAuth } from "@/contexts/AuthContext"
 import { useEventos } from "@/hooks/useEventos"
 import { Plus, ChevronLeft, ChevronRight, Trash2, CalendarDays, Loader2 } from "lucide-react"
+import { CalendarSkeleton, SidebarListSkeleton } from "@/components/skeletons"
 import { DIAS_SEMANA } from "@/lib/constants"
 import { crearDocumento, eliminarDocumento, obtenerDocumentos, where } from "@/lib/firestore"
 import { Evento, GrillaServicio, Notificacion } from "@/types"
@@ -176,11 +177,7 @@ export default function EventosPage() {
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {loading && eventos.length === 0 ? (
-            <Card>
-              <CardContent className="flex justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </CardContent>
-            </Card>
+            <CalendarSkeleton />
           ) : viewMode === "month" ? (
             <Card>
               <CardHeader className="pb-3">
@@ -261,7 +258,7 @@ export default function EventosPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="text-destructive hover:text-destructive/80"
+                              className="text-destructive hover:text-destructive/80 hover:bg-transparent"
                               onClick={() => handleDelete(e.id, e.titulo)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -283,9 +280,7 @@ export default function EventosPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
+              <SidebarListSkeleton count={5} />
             ) : eventos.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No hay próximos eventos</p>
             ) : (

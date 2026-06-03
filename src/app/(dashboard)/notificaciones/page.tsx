@@ -17,7 +17,7 @@ import { es } from "date-fns/locale"
 
 export default function NotificacionesPage() {
   const { user, userData } = useAuth()
-  const { notificaciones, noLeidas, loading, refetch, setNotificaciones } = useNotificaciones(userData?.id || user?.uid)
+  const { notificaciones, noLeidas, loading, refetch, setNotificaciones } = useNotificaciones(user?.uid || userData?.id)
   const { ministerios, loading: loadingMin } = useMinisterios()
   const [respondiendo, setRespondiendo] = useState<string | null>(null)
   const cleaned = useRef(false)

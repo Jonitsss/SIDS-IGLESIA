@@ -9,7 +9,8 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 ### Landing Page
 - Página pública con información de la iglesia: presentación de la pastora, el obispo, sección de músicos con horarios, mapa de ubicación y footer con redes sociales
 - Modo claro por defecto con switch a modo oscuro
-- Diseño responsive con animaciones suaves (framer-motion), zoom deshabilitado en mobile
+- Diseño responsive con animaciones scroll avanzadas (framer-motion): entradas alternadas desde izquierda/derecha, scale-in, revelado secuencial con stagger, transiciones easeOut suaves
+- Zoom deshabilitado en mobile
 - Sin enlaces de acceso visibles — solo `/login` por URL directa
 
 ### Autenticación

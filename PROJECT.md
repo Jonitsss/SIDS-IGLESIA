@@ -375,7 +375,13 @@ npm run dev
 - `Public Sans` cargada via Google Fonts `<link>` en layout.tsx
 - `Cormorant Garamond` cargada como segunda fuente para el header decorativo
 - `Font Awesome 4.7` cargada via CDN en layout.tsx
-- `framer-motion` para `motion.section` con `initial/whileInView` (fade-in-up)
+- `framer-motion` con animaciones scroll avanzadas:
+  - Variantes compartidas: `fadeInLeft`, `fadeInRight`, `scaleIn`
+  - Secciones alternan slide desde izquierda/derecha para imagen y texto
+  - `staggerChildren` para revelado secuencial de párrafos y elementos
+  - `viewport margin: -100px` para trigger anticipado
+  - Tags con `scale` + stagger para entrada escalonada
+  - Map iframe con `scaleIn` (0.95→1) + fade
 - Imágenes con `quality={100}` para máxima calidad
 - Sección de horarios es full-width (edge-to-edge) sin contenedor max-w-5xl
 - Las demas secciones dentro de contenedor `max-w-5xl`

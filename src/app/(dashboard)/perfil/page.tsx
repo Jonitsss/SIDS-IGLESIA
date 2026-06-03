@@ -77,11 +77,12 @@ export default function PerfilPage() {
   }
 
   const handleSave = async () => {
+    setEditing(false)
     try {
       await updateUserData({ ...form, fotoURL, notificaciones: form.notificaciones } as any)
       toast.success("Perfil actualizado")
-      setEditing(false)
     } catch {
+      setEditing(true)
       toast.error("Error al actualizar perfil")
     }
   }

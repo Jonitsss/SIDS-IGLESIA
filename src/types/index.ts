@@ -28,6 +28,7 @@ export interface Usuario {
 
 export interface Ministerio {
   id: string
+  slug: string
   nombre: string
   descripcion: string
   liderId: string

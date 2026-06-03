@@ -14,6 +14,7 @@ import { Plus, Building2, Music, Volume2, Monitor, BookOpen, Trash2, Loader2 } f
 import { crearDocumento, eliminarDocumento, obtenerDocumentos, where, actualizarDocumento } from "@/lib/firestore"
 import { Ministerio, Notificacion, Usuario } from "@/types"
 import { MINISTERIOS_PREDETERMINADOS } from "@/lib/constants"
+import { slugify } from "@/lib/utils"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -43,13 +44,36 @@ export default function MinisteriosPage() {
     })()
   }, [esPastor, loading, ministerios])
 
+  const slugBackfilled = useRef(false)
+
+  useEffect(() => {
+    if (slugBackfilled.current || loading) return
+    const sinSlug = ministerios.filter((m) => !m.slug)
+    if (sinSlug.length === 0) return
+    slugBackfilled.current = true
+    ;(async () => {
+      for (const m of sinSlug) {
+        const slug = slugify(m.nombre)
+        await actualizarDocumento("ministerios", m.id, { slug })
+      }
+    })()
+  }, [loading, ministerios])
+
   const handleCreate = async () => {
     if (!form.nombre || creating) return
     setCreating(true)
 
+    const slug = slugify(form.nombre)
+
+    const existentes = await obtenerDocumentos<Ministerio>("ministerios", [
+      where("slug", "==", slug),
+    ])
+    const slugFinal = existentes.length === 0 ? slug : `${slug}-${existentes.length}`
+
     const tempId = `temp_${Date.now()}`
     const optimistic: Ministerio = {
       id: tempId,
+      slug: slugFinal,
       nombre: form.nombre,
       descripcion: form.descripcion,
       roles: [],
@@ -65,6 +89,7 @@ export default function MinisteriosPage() {
 
     try {
       await crearDocumento<Ministerio>("ministerios", {
+        slug: slugFinal,
         nombre: form.nombre,
         descripcion: form.descripcion,
         roles: [],
@@ -167,7 +192,7 @@ export default function MinisteriosPage() {
             return (
               <Card key={m.id} className="hover:shadow-md transition-shadow group">
                 <CardHeader className="flex flex-row items-center gap-3">
-                  <Link href={`/ministerios/${m.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <Link href={`/ministerios/${m.slug}`} className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: m.color + "20" }}>
                       <Icon className="h-5 w-5" style={{ color: m.color }} />
                     </div>

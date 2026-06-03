@@ -136,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserData = async (data: Partial<Usuario>) => {
     if (!user || !db) return
+    setUserData((prev) => prev ? { ...prev, ...data } : prev)
     let ref = doc(db, "usuarios", user.uid)
     let snap = await getDoc(ref)
     if (!snap.exists()) {
@@ -144,8 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!snap2.empty) ref = snap2.docs[0].ref
     }
     await setDoc(ref, { ...data, authUid: user.uid, updatedAt: serverTimestamp() }, { merge: true })
-    snap = await getDoc(ref)
-    if (snap.exists()) setUserData(snap.data() as Usuario)
   }
 
   return (

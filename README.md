@@ -31,7 +31,8 @@ Plataforma moderna para la gestión interna de colaboradores de una iglesia. Per
 
 ### Gestión de Ministerios
 - CRUD completo de ministerios con roles personalizados (solo pastor crea/elimina)
-- Asignación de líderes y colaboradores a ministerios
+- URLs amigables con slug: `/ministerios/sonido` en vez de `/ministerios/[id]`
+- Asignación de miembros desde el detalle del ministerio con buscador y optimist UI
 - Notificación automática al ser asignado a un ministerio
 - Eliminación en cascada: borrar un ministerio elimina sus notificaciones y referencias
 - Solo el pastor puede eliminar ministerios

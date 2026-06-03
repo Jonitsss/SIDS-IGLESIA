@@ -67,38 +67,40 @@ sids-iglesia/
 │   │   ├── (dashboard)/        # Grupo de rutas protegidas
 │   │   │   ├── layout.tsx      # Meta robots noindex
 │   │   │   ├── dashboard/page.tsx
-│   │   │   ├── ministerios/    # Listado + detalle con roles
+│   │   │   ├── ministerios/    # Listado + detalle con roles (slug URL)
 │   │   │   ├── eventos/        # Calendario mensual + lista
 │   │   │   ├── cronogramas/    # Grillas de servicio con asignaciones
 │   │   │   ├── tareas/         # CRUD con Firestore y notificaciones
 │   │   │   ├── asistencia/     # Panel de confirmaciones del Pastor
 │   │   │   ├── notificaciones/ # Bandeja de notificaciones con aceptar/rechazar
 │   │   │   ├── usuarios/       # CRUD solo pastor, notificaciones toggle
-│   │   │   ├── reportes/
-│   │   │   └── perfil/         # Editar nombre, teléfono, notificaciones
+│   │   │   ├── reportes/       # Estadísticas con datos reales + barras visuales
+│   │   │   └── perfil/         # Editar nombre, teléfono, notificaciones, foto
 │   │   ├── publico/page.tsx    # Redirecciona a /
 │   │   ├── globals.css         # Tema Tokens + dark mode + radial gradients
 │   │   ├── layout.tsx          # Root layout (Public Sans, FA, inline theme script)
-│   │   ├── providers.tsx       # Providers globales
+│   │   ├── providers.tsx       # Providers globales + Toaster personalizado
 │   │   └── page.tsx            # Landing page completa
 │   ├── components/
 │   │   ├── ui/                 # shadcn/ui (Button, Card, Input, Switch, Skeleton, etc.)
 │   │   ├── layout/             # Sidebar (menú por rol), DashboardLayout
 │   │   ├── auth/               # ProtectedRoute, RoleGuard
-│   │   └── skeletons.tsx       # Skeleton loaders (CardGrid, List, Calendar, Cronograma, Asistencia)
+│   │   └── skeletons.tsx       # Skeleton loaders (CardGrid, List, Calendar, Cronograma, Asistencia, Dashboard, MinisterioDetail, Reportes)
 │   ├── contexts/
-│   │   ├── AuthContext.tsx      # Firebase Auth + fetchUserData con authUid fallback
+│   │   ├── AuthContext.tsx      # Firebase Auth + fetchUserData con authUid fallback + optimistic updateUserData
 │   │   └── ThemeContext.tsx     # Dark/Light mode toggle
 │   ├── hooks/
 │   │   ├── useEventos.ts       # Fetch + mounted guard + refreshKey
 │   │   ├── useCronogramas.ts   # onSnapshot real-time + parseDoc
 │   │   ├── useMinisterios.ts   # onSnapshot real-time + parseDoc
 │   │   ├── useTareas.ts        # Ordenamiento en memoria
-│   │   └── useNotificaciones.ts# Query por usuarioId, ordenamiento en memoria
+│   │   ├── useNotificaciones.ts# Query por usuarioId, ordenamiento en memoria
+│   │   ├── useDashboard.ts     # Fetch paralelo de 4 colecciones + stats
+│   │   └── useReportes.ts      # Fetch paralelo + asistencia mensual/ministerio/ranking
 │   ├── lib/
 │   │   ├── firebase.ts         # Firebase lazy init (SSR-safe)
 │   │   ├── firestore.ts        # Helpers con Timestamp→Date, id correcto
-│   │   ├── utils.ts            # cn() utility
+│   │   ├── utils.ts            # cn(), slugify()
 │   │   └── constants.ts        # Constantes del sistema
 │   └── types/index.ts          # Tipos TypeScript (Usuario, Evento, GrillaServicio, etc.)
 ├── .env.local                  # Variables de entorno (no comitear)
@@ -118,9 +120,9 @@ sids-iglesia/
 | `/login` | Público | Inicio de sesión (normaliza email a minúscula) |
 | `/register` | Público | Registro con vinculación de pre-perfil por email case-insensitive |
 | `/publico` | Público | Redirecciona a `/` |
-| `/dashboard` | Auth | Dashboard según rol |
+| `/dashboard` | Auth | Dashboard según rol con datos reales |
 | `/ministerios` | Pastor/Líder | Gestión de ministerios (solo pastor elimina) |
-| `/ministerios/[id]` | Pastor/Líder | Detalle con roles editables |
+| `/ministerios/[slug]` | Pastor/Líder | Detalle con roles editables + agregar miembros |
 | `/eventos` | Auth | Calendario mensual + lista (solo pastor elimina) |
 | `/eventos/[id]` | Auth | Detalle del evento |
 | `/cronogramas` | Auth | Grillas de servicio (solo pastor elimina) |
@@ -129,8 +131,8 @@ sids-iglesia/
 | `/asistencia` | Pastor | Panel de confirmaciones: muestra grillas con estados de asignación |
 | `/notificaciones` | Auth | Bandeja de notificaciones con Aceptar/Rechazar; notifica al pastor al responder |
 | `/usuarios` | Pastor | CRUD solo pastor, toggle de notificaciones, ministerios con badges |
-| `/reportes` | Pastor/Líder | Estadísticas |
-| `/perfil` | Auth | Editar nombre, teléfono, toggle de notificaciones |
+| `/reportes` | Pastor/Líder | Estadísticas con datos reales (asistencia mensual, por ministerio, ranking) |
+| `/perfil` | Auth | Editar nombre, teléfono, toggle de notificaciones, foto de perfil |
 
 ---
 
@@ -141,6 +143,7 @@ sids-iglesia/
 - Gestionar usuarios (crear, editar, eliminar)
 - Crear y eliminar ministerios, eventos, cronogramas, tareas
 - Asignar roles en grillas de servicio
+- Agregar miembros a ministerios
 - Ver panel de confirmaciones en /asistencia
 - Recibir notificaciones cuando alguien confirma/rechaza una asignación
 
@@ -172,7 +175,7 @@ sids-iglesia/
 | telefono | string | Teléfono |
 | rol | string | pastor / lider / colaborador |
 | ministerioIds | string[] | IDs de ministerios |
-| fotoURL | string | URL de foto de perfil |
+| fotoURL | string | URL de foto de perfil (base64) |
 | authUid | string | Firebase Auth UID (se vincula al registrarse) |
 | notificaciones | boolean | Preferencia de notificaciones |
 | activo | boolean | Estado del usuario |
@@ -183,6 +186,7 @@ sids-iglesia/
 | Campo | Tipo | Descripción |
 |---|---|---|
 | id | string | Auto-generado |
+| slug | string | URL amigable (generado del nombre, único) |
 | nombre | string | Nombre del ministerio |
 | descripcion | string | Descripción |
 | liderId | string | ID del líder asignado |
@@ -247,7 +251,7 @@ Nota: al crear una tarea con responsableId, se genera automáticamente una notif
 | titulo | string | Título de la notificación |
 | mensaje | string | Contenido |
 | leido | boolean | Estado de lectura |
-| tipo | string | asignacion / tarea / evento / confirmacion |
+| tipo | string | asignacion / tarea / evento / confirmacion / ministerio |
 | referenciaId | string | ID del recurso relacionado |
 | createdAt | timestamp | Fecha de creación |
 
@@ -322,29 +326,35 @@ npm run dev
 - [x] Badge de notificaciones no leídas en el sidebar
 - [x] Modo claro como tema por defecto
 - [x] Gestión de ministerios con roles personalizados
+- [x] URLs amigables con slug en ministerios (`/ministerios/sonido`)
+- [x] Asignación de miembros desde el detalle del ministerio con buscador
+- [x] Dashboard funcional con datos reales (fetch paralelo de 4 colecciones)
+- [x] Reportes con estadísticas reales (asistencia mensual, por ministerio, ranking)
 - [x] Calendario de eventos (vista mes + lista)
 - [x] Cronogramas/grillas con asignación por ministerio y rol
 - [x] Estados de asignación: Pendiente → Confirmado → Rechazado
 - [x] Tareas conectadas a Firestore con notificaciones
 - [x] Sistema de notificaciones con aceptar/rechazar
 - [x] Panel de Pastor en /asistencia con estados de confirmación
+- [x] Perfil de usuario con toggle de notificaciones y subida de foto (base64 + canvas compression en Firestore, sin Storage)
 - [x] Pre-perfiles de usuario con vinculación al registrarse
 - [x] Normalización de emails (case-insensitive)
 - [x] Permisos por rol: líder crea eventos/grillas, colaborador solo visualiza
 - [x] Notificación automática al ser asignado a un ministerio
 - [x] Eliminación en cascada: evento → cronogramas → notificaciones
 - [x] Eliminación en cascada: ministerio → notificaciones → referencias en usuarios
-- [x] Perfil de usuario con toggle de notificaciones y subida de foto (base64 + canvas compression en Firestore, sin Storage)
 - [x] Hover effects consistentes: logo, icono usuario, nombre y rol heredan colores de hover como los items del menú
 - [x] Login/register redirigen al dashboard si ya hay sesión activa
 - [x] Zoom deshabilitado en mobile (viewport user-scalable=no + touch-action + text-base en inputs auth)
 - [x] object-cover en avatares para evitar distorsión de imagen
 - [x] Diseño responsive (mobile-first)
 - [x] Skeleton screens animados en todas las páginas del dashboard
-- [x] Optimistic UI en creación y eliminación (respuesta instantánea, Firestore en background)
+- [x] Optimistic UI en creación, eliminación y guardado de perfil (respuesta instantánea, Firestore en background)
 - [x] Ministerio y cronogramas con onSnapshot (tiempo real, sin refetch manual)
 - [x] Notificaciones con fecha del evento y eliminación individual/masiva
 - [x] Hover de botones de eliminar sin fondo (hover:bg-transparent)
+- [x] Toasts personalizados con estilo acorde al tema (bg-card/95, backdrop-blur, border por tipo)
+- [x] Backfill automático de slugs para ministerios existentes
 
 ---
 
@@ -403,7 +413,7 @@ npm run dev
 ### Autenticación (AuthContext)
 - `fetchUserData` busca el documento del usuario en este orden: (1) `doc(db, "usuarios", uid)`, (2) `where("authUid")`, (3) `where("email")`. Si el email existe, lo vincula automáticamente.
 - `register` busca un pre-perfil con email case-insensitive; si existe lo vincula seteando `authUid`, si no crea un doc nuevo en `usuarios/{uid}`.
-- `updateUserData` usa el mismo patrón de búsqueda por uid → authUid.
+- `updateUserData` ahora es optimista: actualiza el estado local inmediatamente, y la escritura a Firestore ocurre en background. Eliminada la re-lectura innecesaria post-write.
 - Login y register redirigen al dashboard si el usuario ya tiene sesión activa (evita doble login en pestaña nueva)
 - Inputs de login/register tienen `name` + `autoComplete` para que el navegador guarde las credenciales
 - Password inputs tienen toggle show/hide (Eye/EyeOff) para evitar errores al escribir
@@ -426,3 +436,21 @@ npm run dev
 - Un mismo email puede tener dos documentos en `usuarios` (uno con `authUid` y otro sin)
 - Las listas de usuarios en dropdowns se deduplican por email, priorizando el documento con `authUid`
 - Las notificaciones se envían usando `authUid` cuando está disponible
+
+### Slug en Ministerios
+- Los ministerios usan URLs amigables: `/ministerios/sonido` en vez de `/ministerios/[firestoreId]`
+- El slug se genera automáticamente desde el nombre al crear (lowercase, sin tildes, espacios → guiones)
+- Colisiones manejadas con sufijo numérico (`sonido-1`, `sonido-2`)
+- Backfill automático para ministerios existentes sin slug al cargar la página de listado como pastor
+
+### Optimizaciones de UX
+- **Optimistic UI**: crear/eliminar/actualizar modifica el estado local al instante; Firestore escribe en background. Si falla, se revierte automáticamente.
+- **Tiempo real**: `useMinisterios` y `useCronogramas` usan `onSnapshot` de Firestore (sin refetch manual)
+- **Skeleton screens**: todas las páginas del dashboard (`CardGridSkeleton`, `ListSkeleton`, `CronogramaSkeleton`, `CalendarSkeleton`, `AsistenciaSkeleton`, `DashboardSkeleton`, `MinisterioDetailSkeleton`, `ReportesSkeleton`)
+
+### Toast notifications (sonner)
+- Configurado en `providers.tsx` con `toastOptions` personalizados
+- Fondo semitransparente con blur (`bg-card/95 backdrop-blur-xl`)
+- Border coloreado por tipo: emerald (success), red (error), amber (warning), blue (info)
+- Duración: 2500ms
+- Texto adaptativo al theme (`text-foreground`)

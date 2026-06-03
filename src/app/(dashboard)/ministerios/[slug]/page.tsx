@@ -3,39 +3,83 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Ministerio, Usuario } from "@/types"
-import { obtenerDocumento, obtenerDocumentos, where, actualizarDocumento } from "@/lib/firestore"
+import { obtenerDocumentos, where, actualizarDocumento } from "@/lib/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MinisterioDetailSkeleton } from "@/components/skeletons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, UserPlus, Settings, Plus, Trash2, Save, Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ArrowLeft, UserPlus, Plus, Trash2, Save, Loader2, Search, Check } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
 export default function MinisterioDetailPage() {
   const params = useParams()
-  const id = params.id as string
+  const slug = params.slug as string
   const [ministerio, setMinisterio] = useState<Ministerio | null>(null)
   const [miembros, setMiembros] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [roles, setRoles] = useState<string[]>([])
   const [nuevoRol, setNuevoRol] = useState("")
   const [savingRoles, setSavingRoles] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [disponibles, setDisponibles] = useState<Usuario[]>([])
+  const [loadingDisponibles, setLoadingDisponibles] = useState(false)
+  const [buscador, setBuscador] = useState("")
+  const [agregando, setAgregando] = useState<string | null>(null)
+
+  const handleOpenDialog = async () => {
+    setDialogOpen(true)
+    if (disponibles.length > 0 || !ministerio) return
+    setLoadingDisponibles(true)
+    try {
+      const todos = await obtenerDocumentos<Usuario>("usuarios", [where("activo", "==", true)])
+      const miembrosIds = new Set(miembros.map((m) => m.id))
+      setDisponibles(todos.filter((u) => !miembrosIds.has(u.id)))
+    } catch {
+      toast.error("Error al cargar usuarios")
+    } finally {
+      setLoadingDisponibles(false)
+    }
+  }
+
+  const handleAgregarMiembro = async (usuario: Usuario) => {
+    if (!ministerio || agregando) return
+    setAgregando(usuario.id)
+    const nuevosIds = [...(usuario.ministerioIds || []), ministerio.id]
+    setMiembros((prev) => [...prev, { ...usuario, ministerioIds: nuevosIds }])
+    setDisponibles((prev) => prev.filter((u) => u.id !== usuario.id))
+    try {
+      await actualizarDocumento("usuarios", usuario.id, { ministerioIds: nuevosIds })
+      toast.success(`${usuario.nombre} agregado a ${ministerio.nombre}`)
+    } catch {
+      setMiembros((prev) => prev.filter((m) => m.id !== usuario.id))
+      setDisponibles((prev) => [...prev, usuario])
+      toast.error("Error al agregar miembro")
+    } finally {
+      setAgregando(null)
+    }
+  }
 
   useEffect(() => {
     let mounted = true
     ;(async () => {
       try {
-        const m = await obtenerDocumento<Ministerio>("ministerios", id)
+        const resultados = await obtenerDocumentos<Ministerio>("ministerios", [
+          where("slug", "==", slug),
+          where("activo", "==", true),
+        ])
         if (!mounted) return
+        const m = resultados[0] || null
         setMinisterio(m)
         if (m) {
           setRoles(m.roles || [])
           const usuarios = await obtenerDocumentos<Usuario>("usuarios", [
-            where("ministerioIds", "array-contains", id),
+            where("ministerioIds", "array-contains", m.id),
             where("activo", "==", true),
           ])
           if (mounted) setMiembros(usuarios)
@@ -47,7 +91,7 @@ export default function MinisterioDetailPage() {
       }
     })()
     return () => { mounted = false }
-  }, [id])
+  }, [slug])
 
   const handleAddRol = () => {
     const rol = nuevoRol.trim()
@@ -61,9 +105,10 @@ export default function MinisterioDetailPage() {
   }
 
   const handleSaveRoles = async () => {
+    if (!ministerio) return
     setSavingRoles(true)
     try {
-      await actualizarDocumento("ministerios", id, { roles })
+      await actualizarDocumento("ministerios", ministerio.id, { roles })
       setMinisterio((prev) => prev ? { ...prev, roles } : prev)
       toast.success("Roles guardados")
     } catch {
@@ -73,7 +118,7 @@ export default function MinisterioDetailPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">Cargando...</div>
+  if (loading) return <MinisterioDetailSkeleton />
   if (!ministerio) return <div className="p-8 text-center text-muted-foreground">Ministerio no encontrado</div>
 
   return (
@@ -89,10 +134,75 @@ export default function MinisterioDetailPage() {
           <p className="text-muted-foreground">{ministerio.descripcion}</p>
         </div>
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm">
-            <UserPlus className="h-4 w-4" />
-            Agregar Miembro
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" onClick={handleOpenDialog}>
+                <UserPlus className="h-4 w-4" />
+                Agregar Miembro
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Agregar Miembro a {ministerio.nombre}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar colaborador..."
+                    className="pl-8"
+                    value={buscador}
+                    onChange={(e) => setBuscador(e.target.value)}
+                  />
+                </div>
+                {loadingDisponibles ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : disponibles.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground py-6">
+                    Todos los colaboradores ya son miembros de este ministerio
+                  </p>
+                ) : (
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {disponibles
+                      .filter(
+                        (u) =>
+                          `${u.nombre} ${u.apellido}`.toLowerCase().includes(buscador.toLowerCase()) ||
+                          u.email.toLowerCase().includes(buscador.toLowerCase())
+                      )
+                      .map((u) => (
+                        <div key={u.id} className="flex items-center gap-3 p-2 rounded-lg">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {u.nombre[0]}{u.apellido[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{u.nombre} {u.apellido}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{u.rol}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="shrink-0"
+                            onClick={() => handleAgregarMiembro(u)}
+                            disabled={agregando === u.id}
+                          >
+                            {agregando === u.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                            Agregar
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
